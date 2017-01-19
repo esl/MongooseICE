@@ -24,7 +24,8 @@ defmodule Fennec.Mixfile do
     [{:ex_doc, "~> 0.14", runtime: false, only: :dev},
      {:credo, "~> 0.5", runtime: false, only: :dev},
      {:dialyxir, "~> 0.4", runtime: false, only: :dev},
-     {:excoveralls, "~> 0.5", runtime: false, only: :test}]
+     {:excoveralls, "~> 0.5", runtime: false, only: :test},
+     {:inch_ex, "~> 0.5", runtime: false, only: :dev}]
   end
 
   defp docs do
