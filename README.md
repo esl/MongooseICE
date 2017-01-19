@@ -1,5 +1,8 @@
 # Fennec
 
+[![Build Status](https://travis-ci.org/esl/fennec.svg?branch=master)](https://travis-ci.org/esl/fennec)
+[![Coverage Status](https://coveralls.io/repos/github/esl/fennec/badge.svg)](https://coveralls.io/github/esl/fennec)
+
 STUN/TURN server
 
 ## License
