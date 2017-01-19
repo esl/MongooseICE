@@ -25,7 +25,8 @@ defmodule Fennec.Mixfile do
      {:credo, "~> 0.5", runtime: false, only: :dev},
      {:dialyxir, "~> 0.4", runtime: false, only: :dev},
      {:excoveralls, "~> 0.5", runtime: false, only: :test},
-     {:inch_ex, "~> 0.5", runtime: false, only: :dev}]
+     {:inch_ex, "~> 0.5", runtime: false, only: :dev},
+     {:jerboa, github: "esl/jerboa"}]
   end
 
   defp docs do

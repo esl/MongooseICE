@@ -1,6 +1,10 @@
 defmodule Fennec.UDP.Worker do
   @moduledoc false
   # Process handling STUN messages received over UDP
+  #
+  # Currently when worker receives a message which can't
+  # be decoded or don't know how to process a message
+  # it simply crashes.
 
   alias Fennec.UDP
   alias Fennec.UDP.{WorkerSupervisor, Dispatcher}
@@ -38,8 +42,8 @@ defmodule Fennec.UDP.Worker do
   end
 
   def handle_cast({:process_data, data}, state) do
-    require Logger
-    Logger.debug "[#{inspect self()}] Worker received: #{inspect data}"
+    resp = Fennec.STUN.process_message!(data, state.ip, state.port)
+    :gen_udp.send(state.socket, state.ip, state.port, resp)
     {:noreply, state, @timeout}
   end
 
