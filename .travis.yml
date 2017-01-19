@@ -1,0 +1,36 @@
+language: elixir
+
+install:
+  - mix local.rebar --force
+  - mix local.hex --force
+  - mix deps.get
+  - mix compile
+  - MIX_ENV=test mix compile
+
+script:
+  .travis/script.sh $PRESET
+
+after_script:
+  mix inch.report
+
+elixir:
+  - 1.4.0
+otp_release:
+  - 19.2
+  - 18.3
+env:
+  - PRESET=test
+
+matrix:
+  include:
+    - otp_release: 19.2
+      elixir: 1.4.0
+      env: PRESET=dialyzer
+
+cache:
+  directories:
+      - .dialyzer
+
+branches:
+  only:
+    - master
