@@ -49,6 +49,15 @@ defmodule Fennec.UDPTest do
     end
   end
 
+  test "start/1 and stop/1 a UDP server linked to Fennec.Supervisor" do
+    port = 23232
+    {:ok, pid} = Fennec.UDP.start(ip: {127, 0, 0, 1}, port: port)
+
+    assert [{id, _, _, _}] = Supervisor.which_children(Fennec.Supervisor)
+    assert :ok = Fennec.UDP.stop(port)
+    assert [] = Supervisor.which_children(Fennec.Supervisor)
+  end
+
   defp binding_request(id) do
     %Format{class: :request, method: :binding, identifier: id} |> Format.encode()
   end

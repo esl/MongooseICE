@@ -11,15 +11,47 @@ defmodule Fennec.UDP do
         ...
       ]
 
+  You can also start a server under Fennec's supervision tree
+  using `start/1`.
+
   You may start multiple UDP servers at a time.
   """
 
   @type socket :: :gen_udp.socket
   @type start_options :: [option]
-  @type option :: {:ip, :inet.ip_address} | {:port, :inet.port_number}
+  @type option :: {:ip, Fennec.ip} | {:port, Fennec.portn}
 
   @default_opts [ip: {127, 0, 0, 1}, port: 3478]
   @allowed_opts [:ip, :port]
+
+  @doc """
+  Starts UDP STUN server under Fennec's supervisor
+
+  Accepts the same options as `start_link/1`.
+  """
+  @spec start(start_options) :: Supervisor.on_start_child
+  def start(opts) do
+    opts = normalize_opts(opts)
+    name = base_name(opts[:port])
+    child = Supervisor.Spec.supervisor(Fennec.UDP.Supervisor, [opts], id: name)
+    Supervisor.start_child(Fennec.Supervisor, child)
+  end
+
+  @doc """
+  Stops UDP server started with start/1
+
+  It accepts the *port number* server is running on as argument
+  """
+  @spec stop(Fennec.portn) :: :ok | :error
+  def stop(port) do
+    name = base_name(port)
+    with :ok <- Supervisor.terminate_child(Fennec.Supervisor, name),
+         :ok <- Supervisor.delete_child(Fennec.Supervisor, name) do
+      :ok
+    else
+      _ -> :error
+    end
+  end
 
   @doc """
   Starts UDP STUN server with given options
@@ -27,13 +59,12 @@ defmodule Fennec.UDP do
   Default options are:
       #{inspect @default_opts}
 
-  Links the server to the calling process. If the server with given port
-  number was already started, this function will crash.
+  Links the server to the calling process.
   """
   @spec start_link(start_options) :: Supervisor.on_start
   def start_link(opts) do
     opts = normalize_opts(opts)
-    {:ok, pid} = Fennec.UDP.Supervisor.start_link(opts)
+    Fennec.UDP.Supervisor.start_link(opts)
   end
 
   defp normalize_opts(opts) do
