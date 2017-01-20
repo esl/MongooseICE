@@ -13,7 +13,7 @@ defmodule Fennec.UDPTest do
       server_address = {127, 0, 0, 1}
       client_port = 34343
       client_address = {127, 0, 0, 1}
-      Fennec.UDP.start_link(server_port)
+      Fennec.UDP.start_link(ip: server_address, port: server_port)
       id = :crypto.strong_rand_bytes(12)
       req = binding_request(id)
 

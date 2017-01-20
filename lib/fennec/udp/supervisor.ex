@@ -2,17 +2,17 @@ defmodule Fennec.UDP.Supervisor do
   @moduledoc false
   # Supervisor of UDP listener, dispatcher and workers
 
-  @spec start_link(Fennec.portn) :: Supervisor.on_start
-  def start_link(port) do
+  @spec start_link(Fennec.UDP.options) :: Supervisor.on_start
+  def start_link(opts) do
     import Supervisor.Spec, warn: false
 
-    base_name = Fennec.UDP.base_name(port)
+    base_name = Fennec.UDP.base_name(opts[:port])
     name = Fennec.UDP.sup_name(base_name)
 
     children = [
       supervisor(Fennec.UDP.Dispatcher, [base_name]),
       supervisor(Fennec.UDP.WorkerSupervisor, [base_name]),
-      worker(Fennec.UDP.Receiver, [port, base_name])
+      worker(Fennec.UDP.Receiver, [opts, base_name])
     ]
 
     opts = [strategy: :one_for_all, name: name]

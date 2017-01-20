@@ -6,8 +6,8 @@ defmodule Fennec.UDP do
   to your supervision tree:
 
       children = [
-        supervisor(Fennec.UDP, [3478]),
-        supervisor(Fennec.UDP, [1234]),
+        supervisor(Fennec.UDP, [[port: 3478]]),
+        supervisor(Fennec.UDP, [[port: 1234]]),
         ...
       ]
 
@@ -15,15 +15,31 @@ defmodule Fennec.UDP do
   """
 
   @type socket :: :gen_udp.socket
+  @type start_options :: [option]
+  @type option :: {:ip, :inet.ip_address} | {:port, :inet.port_number}
+
+  @default_opts [ip: {127, 0, 0, 1}, port: 3478]
+  @allowed_opts [:ip, :port]
 
   @doc """
-  Starts UDP STUN server receiving on a given port number
+  Starts UDP STUN server with given options
 
-  Links the server to a calling process.
+  Default options are:
+      #{inspect @default_opts}
+
+  Links the server to the calling process. If the server with given port
+  number was already started, this function will crash.
   """
-  @spec start_link(Fennec.portn) :: Supervisor.on_start
-  def start_link(port) do
-    Fennec.UDP.Supervisor.start_link(port)
+  @spec start_link(start_options) :: Supervisor.on_start
+  def start_link(opts) do
+    opts = normalize_opts(opts)
+    {:ok, pid} = Fennec.UDP.Supervisor.start_link(opts)
+  end
+
+  defp normalize_opts(opts) do
+    @default_opts
+    |> Keyword.merge(opts)
+    |> Keyword.take(@allowed_opts)
   end
 
   @doc false

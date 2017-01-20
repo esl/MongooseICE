@@ -8,16 +8,17 @@ defmodule Fennec.UDP.Receiver do
                    worker_sup: atom,
                    socket: Fennec.UDP.socket}
 
-  def start_link(listen_port, base_name) do
+  def start_link(opts, base_name) do
     name = Fennec.UDP.receiver_name(base_name)
-    GenServer.start_link(__MODULE__, [listen_port, base_name], name: name)
+    GenServer.start_link(__MODULE__, [opts, base_name], name: name)
   end
 
-  def init([listen_port, base_name]) do
+  def init([opts, base_name]) do
     worker_sup = Fennec.UDP.worker_sup_name(base_name)
     dispatcher = Fennec.UDP.dispatcher_name(base_name)
     state = %{dispatcher: dispatcher, worker_sup: worker_sup, socket: nil}
-    case :gen_udp.open(listen_port, [:binary, active: true]) do
+    socket_opts = [:binary, active: true, ip: opts[:ip]]
+    case :gen_udp.open(opts[:port], socket_opts) do
       {:ok, socket} ->
         {:ok, %{state | socket: socket}}
       {:error, reason} ->
