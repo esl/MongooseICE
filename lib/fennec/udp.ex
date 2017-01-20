@@ -6,10 +6,12 @@ defmodule Fennec.UDP do
   to your supervision tree:
 
       children = [
-        supervisor(Fennec.UDP, [port_number])
+        supervisor(Fennec.UDP, [3478]),
+        supervisor(Fennec.UDP, [1234]),
+        ...
       ]
 
-  Currently only one UDP server may be started at a time.
+  You may start multiple UDP servers at a time.
   """
 
   @type socket :: :gen_udp.socket
@@ -22,5 +24,35 @@ defmodule Fennec.UDP do
   @spec start_link(Fennec.portn) :: Supervisor.on_start
   def start_link(port) do
     Fennec.UDP.Supervisor.start_link(port)
+  end
+
+  @doc false
+  def base_name(port) do
+    "#{__MODULE__}.#{port}" |> String.to_atom()
+  end
+
+  @doc false
+  def sup_name(base_name) do
+    build_name(base_name, "Supervisor")
+  end
+
+  @doc false
+  def receiver_name(base_name) do
+    build_name(base_name, "Receiver")
+  end
+
+  @doc false
+  def dispatcher_name(base_name) do
+    build_name(base_name, "Dispatcher")
+  end
+
+  @doc false
+  def worker_sup_name(base_name) do
+    build_name(base_name, "WorkerSupervisor")
+  end
+
+  @doc false
+  defp build_name(base, suffix) do
+    "#{base}.#{suffix}" |> String.to_atom()
   end
 end

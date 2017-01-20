@@ -19,9 +19,9 @@ defmodule Fennec.UDP.Worker do
                    port: :inet.port_number}
 
   # Starts a UDP worker
-  @spec start(UDP.socket, Fennec.ip, Fennec.portn) :: {:ok, pid} | :error
-  def start(socket, ip, port) do
-    WorkerSupervisor.start_worker(socket, ip, port)
+  @spec start(atom, UDP.socket, Fennec.ip, Fennec.portn) :: {:ok, pid} | :error
+  def start(worker_sup, socket, ip, port) do
+    WorkerSupervisor.start_worker(worker_sup, socket, ip, port)
   end
 
   # Process UDP datagram which might be STUN message
@@ -30,14 +30,14 @@ defmodule Fennec.UDP.Worker do
     GenServer.cast(pid, {:process_data, data})
   end
 
-  def start_link(socket, ip, port) do
-    GenServer.start_link(__MODULE__, [socket, ip, port])
+  def start_link(dispatcher, socket, ip, port) do
+    GenServer.start_link(__MODULE__, [dispatcher, socket, ip, port])
   end
 
   ## GenServer callbacks
 
-  def init([socket, ip, port]) do
-    Dispatcher.register_worker(self(), ip, port)
+  def init([dispatcher, socket, ip, port]) do
+    Dispatcher.register_worker(dispatcher, self(), ip, port)
     {:ok, %{socket: socket, ip: ip, port: port}}
   end
 

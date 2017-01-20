@@ -6,13 +6,16 @@ defmodule Fennec.UDP.Supervisor do
   def start_link(port) do
     import Supervisor.Spec, warn: false
 
+    base_name = Fennec.UDP.base_name(port)
+    name = Fennec.UDP.sup_name(base_name)
+
     children = [
-      worker(Fennec.UDP.Receiver, [port]),
-      supervisor(Fennec.UDP.Dispatcher, []),
-      supervisor(Fennec.UDP.WorkerSupervisor, [])
+      supervisor(Fennec.UDP.Dispatcher, [base_name]),
+      supervisor(Fennec.UDP.WorkerSupervisor, [base_name]),
+      worker(Fennec.UDP.Receiver, [port, base_name])
     ]
 
-    opts = [strategy: :one_for_all, name: Fennec.UDP.Supervisor]
+    opts = [strategy: :one_for_all, name: name]
     Supervisor.start_link(children, opts)
   end
 end
