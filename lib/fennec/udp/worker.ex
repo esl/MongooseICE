@@ -37,13 +37,13 @@ defmodule Fennec.UDP.Worker do
   ## GenServer callbacks
 
   def init([dispatcher, socket, ip, port]) do
-    Dispatcher.register_worker(dispatcher, self(), ip, port)
+    _ = Dispatcher.register_worker(dispatcher, self(), ip, port)
     {:ok, %{socket: socket, ip: ip, port: port}}
   end
 
   def handle_cast({:process_data, data}, state) do
     resp = Fennec.STUN.process_message!(data, state.ip, state.port)
-    :gen_udp.send(state.socket, state.ip, state.port, resp)
+    :ok = :gen_udp.send(state.socket, state.ip, state.port, resp)
     {:noreply, state, @timeout}
   end
 
