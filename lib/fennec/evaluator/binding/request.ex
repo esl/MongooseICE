@@ -1,0 +1,27 @@
+defmodule Fennec.Evaluator.Binding.Request do
+  @moduledoc false
+
+  alias Jerboa.Format, as: Parameters
+
+  @spec service(Parameters.t, map) :: Parameters.t
+  def service(x, %{address: a, port: p}) do
+    %{x | attributes: [attribute(family(a), a, p)]}
+  end
+
+  defp attribute(f, a, p) do
+    %Jerboa.Format.Body.Attribute.XORMappedAddress{
+      family: f,
+      address: a,
+      port: p
+    }
+  end
+
+  defp family(x) do
+    case tuple_size(x) do
+      4 ->
+        :ipv4
+      8 ->
+        :ipv6
+    end
+  end
+end
