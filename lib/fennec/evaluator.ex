@@ -1,9 +1,5 @@
 defmodule Fennec.Evaluator do
-  @moduledoc """
-
-  Common to ALL TURN/STUN. E.g. authentication.
-
-  """
+  @moduledoc false
 
   alias Jerboa.Format, as: Parameters
 

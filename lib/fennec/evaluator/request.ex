@@ -1,10 +1,5 @@
 defmodule Fennec.Evaluator.Request do
-  @moduledoc """
-
-  Common to ALL REQUESTS. E.g. all requests wind up as a success
-  response OR a failure response.
-
-  """
+  @moduledoc false
 
   alias Jerboa.Format, as: Parameters
 
