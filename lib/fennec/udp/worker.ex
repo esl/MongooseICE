@@ -42,8 +42,12 @@ defmodule Fennec.UDP.Worker do
   end
 
   def handle_cast({:process_data, data}, state) do
-    resp = Fennec.STUN.process_message!(data, state.ip, state.port)
-    :ok = :gen_udp.send(state.socket, state.ip, state.port, resp)
+    case Fennec.STUN.process_message!(data, state.ip, state.port) do
+      :void ->
+        :ok
+      resp ->
+        :ok = :gen_udp.send(state.socket, state.ip, state.port, resp)
+    end
     {:noreply, state, @timeout}
   end
 

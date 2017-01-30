@@ -67,6 +67,26 @@ defmodule Fennec.UDPTest do
     end
   end
 
+  describe "binding indication" do
+
+    test "(IPv4) does not return (a timely) response" do
+      server_port = 21_212
+      server_address = {127, 0, 0, 1}
+      client_port = 34_343
+      client_address = {127, 0, 0, 1}
+      Fennec.UDP.start_link(ip: server_address, port: server_port)
+      id = :crypto.strong_rand_bytes(12)
+      req = binding_indication(id)
+
+      {:ok, sock} = :gen_udp.open(client_port,
+                                  [:binary, active: false, ip: client_address])
+      :ok = :gen_udp.send(sock, server_address, server_port, req)
+
+      assert {:error, :timeout} = :gen_udp.recv(sock, 0, @recv_timeout)
+      :gen_udp.close(sock)
+    end
+  end
+
   test "start/1 and stop/1 a UDP server linked to Fennec.Supervisor" do
     port = 23_232
     {:ok, _} = Fennec.UDP.start(ip: {127, 0, 0, 1}, port: port)
@@ -78,5 +98,9 @@ defmodule Fennec.UDPTest do
 
   defp binding_request(id) do
     %Format{class: :request, method: :binding, identifier: id} |> Format.encode()
+  end
+
+  defp binding_indication(id) do
+    %Format{class: :indication, method: :binding, identifier: id} |> Format.encode()
   end
 end
