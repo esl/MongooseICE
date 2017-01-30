@@ -1,6 +1,7 @@
 defmodule Fennec.UDPTest do
   use ExUnit.Case
 
+  alias Jerboa.Params
   alias Jerboa.Format
   alias Jerboa.Format.Body.Attribute
   alias Jerboa.Format.Body.Attribute.XORMappedAddress
@@ -27,7 +28,7 @@ defmodule Fennec.UDPTest do
                resp}} = :gen_udp.recv(sock, 0, @recv_timeout)
       :gen_udp.close(sock)
       params = Format.decode!(resp)
-      assert %Format{class: :success,
+      assert %Params{class: :success,
                      method: :binding,
                      identifier: ^id,
                      attributes: [a]} = params
@@ -56,7 +57,7 @@ defmodule Fennec.UDPTest do
                resp}} = :gen_udp.recv(sock, 0, @recv_timeout)
       :gen_udp.close(sock)
       params = Format.decode!(resp)
-      assert %Format{class: :success,
+      assert %Params{class: :success,
                      method: :binding,
                      identifier: ^id,
                      attributes: [a]} = params
@@ -97,10 +98,10 @@ defmodule Fennec.UDPTest do
   end
 
   defp binding_request(id) do
-    %Format{class: :request, method: :binding, identifier: id} |> Format.encode()
+    %Params{class: :request, method: :binding, identifier: id} |> Format.encode()
   end
 
   defp binding_indication(id) do
-    %Format{class: :indication, method: :binding, identifier: id} |> Format.encode()
+    %Params{class: :indication, method: :binding, identifier: id} |> Format.encode()
   end
 end

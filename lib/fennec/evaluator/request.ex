@@ -1,9 +1,9 @@
 defmodule Fennec.Evaluator.Request do
   @moduledoc false
 
-  alias Jerboa.Format, as: Parameters
+  alias Jerboa.Params
 
-  @spec service(Parameters.t, map) :: Parameters.t
+  @spec service(Params.t, map) :: Params.t
   def service(parameters, changes) do
     parameters
     |> service_(changes)
@@ -19,8 +19,8 @@ defmodule Fennec.Evaluator.Request do
     end
   end
 
-  defp method(%Parameters{method: m}) do
-    m
+  defp method(x) do
+    Params.get_method(x)
   end
 
   defp response(x) do
@@ -32,15 +32,15 @@ defmodule Fennec.Evaluator.Request do
     end
   end
 
-  defp errors?(%Parameters{attributes: _}) do
+  defp errors?(%Params{attributes: _}) do
     false
   end
 
   defp success(x) do
-    %{x | class: :success}
+    Params.put_class(x, :success)
   end
 
   defp failure(x) do
-    %{x | class: :failure}
+    Params.put_class(x, :failure)
   end
 end

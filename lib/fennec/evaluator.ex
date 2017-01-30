@@ -1,9 +1,9 @@
 defmodule Fennec.Evaluator do
   @moduledoc false
 
-  alias Jerboa.Format, as: Parameters
+  alias Jerboa.Params
 
-  @spec service(Parameters.t, map) :: Parameters.t | :void
+  @spec service(Params.t, map) :: Params.t | :void
   def service(p, changes) do
     case class(p) do
       :request ->
@@ -15,7 +15,7 @@ defmodule Fennec.Evaluator do
     end
   end
 
-  defp class(%Parameters{class: c}) do
-    c
+  defp class(x) do
+    Params.get_class(x)
   end
 end

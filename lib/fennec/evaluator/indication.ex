@@ -6,9 +6,9 @@ defmodule Fennec.Evaluator.Indication do
 
   """
 
-  alias Jerboa.Format, as: Parameters
+  alias Jerboa.Params
 
-  @spec service(Parameters.t, map) :: Parameters.t | :void
+  @spec service(Params.t, map) :: Params.t | :void
   def service(parameters, _) do
     case method(parameters) do
       :binding ->
@@ -18,7 +18,7 @@ defmodule Fennec.Evaluator.Indication do
     end
   end
 
-  defp method(%Parameters{method: m}) do
+  defp method(%Params{method: m}) do
     m
   end
 end
