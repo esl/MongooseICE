@@ -1,8 +1,14 @@
 # Fennec
+
 [![Build Status][BUILD BADGE]][BUILD LINK]
 [![Coverage Status][COVERAGE BADGE]][COVERAGE LINK]
 
 Fennec is a STUN server by [Erlang Solutions][OUR SITE] whose internals aim to be well written and tested.
+
+## Rationale
+
+Many modern applications (mobile and web) are media intensive like those involving audio, video, gaming, and file transfer.
+Fennec helps to get communication done peer-to-peer (without going through a server) so your **bandwidth and server-side costs don't need to be as much of a concern**.
 
 ## Resources
 
@@ -11,8 +17,8 @@ Some helpful technical material:
 * For the bigger picture see the **RTCPeerConnection plus servers** section under [this][OVERVIEW] tutorial
 * Fennec alone isn't enough to get peer-to-peer communication going.
 The reason why is described in [this][SIGNALING] tutorial.
-Our [XMPP server][MONGOOSE], MongooseIM, is perfect for building a combination of signaling and chat applications.
-* Find the STUN, TURN, and ICE RFCs (at the IETF site).
+Our [XMPP server][MONGOOSE], MongooseIM, is perfect for building a combination of signaling and chat applications
+* Find the STUN, TURN, and ICE RFCs (at the IETF site)
 
 ## License
 
