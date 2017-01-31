@@ -1,7 +1,7 @@
 # Fennec
 
-[![Build Status](https://travis-ci.org/esl/fennec.svg?branch=master)](https://travis-ci.org/esl/fennec)
-[![Coverage Status](https://coveralls.io/repos/github/esl/fennec/badge.svg)](https://coveralls.io/github/esl/fennec)
+[![Build Status][BUILD BADGE]][BUILD LINK]
+[![Coverage Status][COVERAGE BADGE]][COVERAGE LINK]
 
 STUN/TURN server
 
@@ -20,3 +20,9 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+[BUILD BADGE]: https://travis-ci.org/esl/fennec.svg?branch=master
+[BUILD LINK]: https://travis-ci.org/esl/fennec
+
+[COVERAGE BADGE]: https://coveralls.io/repos/github/esl/fennec/badge.svg
+[COVERAGE LINK]: https://coveralls.io/github/esl/fennec
