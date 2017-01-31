@@ -7,7 +7,9 @@ defmodule FennecTest do
 
     ## Given:
     import Fennec.Test.Helper.Server, only: [configuration: 1]
-    {:ok, alice} = Jerboa.Client.start(server: configuration("Google"))
+    cfg = %{address: a, port: p} = configuration("Fennec (local)")
+    Fennec.UDP.start_link(ip: a, port: p)
+    {:ok, alice} = Jerboa.Client.start(server: cfg)
     on_exit fn ->
       :ok = Jerboa.Client.stop(alice)
     end
@@ -15,7 +17,7 @@ defmodule FennecTest do
      client: alice}
   end
 
-  describe "Fennec over UDP Transport" do
+  describe "(IPv4) Fennec over UDP Transport" do
 
     test "send binding request; recieve success response", %{client: alice} do
 
