@@ -1,9 +1,18 @@
 # Fennec
-
 [![Build Status][BUILD BADGE]][BUILD LINK]
 [![Coverage Status][COVERAGE BADGE]][COVERAGE LINK]
 
-STUN/TURN server
+Fennec is a STUN server by [Erlang Solutions][OUR SITE] whose internals aim to be well written and tested.
+
+## Resources
+
+Some helpful technical material:
+
+* For the bigger picture see the **RTCPeerConnection plus servers** section under [this][OVERVIEW] tutorial
+* Fennec alone isn't enough to get peer-to-peer communication going.
+The reason why is described in [this][SIGNALING] tutorial.
+Our [XMPP server][MONGOOSE], MongooseIM, is perfect for building a combination of signaling and chat applications.
+* Find the STUN, TURN, and ICE RFCs (at the IETF site).
 
 ## License
 
@@ -26,3 +35,10 @@ limitations under the License.
 
 [COVERAGE BADGE]: https://coveralls.io/repos/github/esl/fennec/badge.svg
 [COVERAGE LINK]: https://coveralls.io/github/esl/fennec
+
+[OUR SITE]: https://www.erlang-solutions.com/
+
+[OVERVIEW]: https://www.html5rocks.com/en/tutorials/webrtc/basics/#toc-rtcpeerconnection
+[SIGNALING]: https://www.html5rocks.com/en/tutorials/webrtc/basics/#toc-rtcpeerconnection
+
+[MONGOOSE]: https://github.com/esl/MongooseIM
