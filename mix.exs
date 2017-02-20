@@ -34,7 +34,8 @@ defmodule Fennec.Mixfile do
   end
 
   defp docs do
-    [main: "Fennec"]
+    [main: "Fennec",
+     extras: ["README.md": [title: "Jerboa"]]]
   end
 
   defp dialyzer do

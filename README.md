@@ -20,6 +20,46 @@ The reason why is described in [this][SIGNALING] tutorial.
 Our [XMPP server][MONGOOSE], MongooseIM, is perfect for building a combination of signaling and chat applications
 * Find the STUN, TURN, and ICE RFCs (at the IETF site)
 
+### Checklist of STUN/TURN methods supported by Fennec
+
+- [x] Binding
+- [ ] Allocate
+- [ ] Refresh
+- [ ] Send
+- [ ] Data
+- [ ] CreatePermission
+- [ ] ChannelBind
+
+### Checklist of STUN/TURN attributes supported by Fennec
+
+#### Comprehension Required
+
+- [x] XOR-MAPPED-ADDRESS
+- [ ] MESSAGE-INTEGRITY
+- [ ] ERROR-CODE
+- [ ] UNKNOWN-ATTRIBUTES
+- [ ] REALM
+- [ ] NONCE
+- [ ] CHANNEL-NUMBER
+- [ ] LIFETIME
+- [ ] XOR-PEER-ADDRESS
+- [ ] DATA
+- [ ] XOR-RELAYED-ADDRESS
+- [ ] EVEN-PORT
+- [ ] REQUESTED-TRANSPORT
+- [ ] DONT-FRAGMENT
+- [ ] RESERVATION-TOKEN
+- [ ] PRIORITY
+- [ ] USE-CANDIDATE
+- [ ] ICE-CONTROLLED
+- [ ] ICE-CONTROLLING
+
+#### Comprehension Optional
+
+- [ ] SOFTWARE
+- [ ] ALTERNATE-SERVER
+- [ ] FINGERPRINT
+
 ## License
 
 Copyright 2017 Erlang Solutions Ltd.
