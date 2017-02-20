@@ -2,8 +2,13 @@ defmodule Fennec.UDP do
   @moduledoc """
   UDP STUN server
 
-  The easiest way to start a server is to hook it up
-  to your supervision tree:
+  The easiest way to start a server is to spawn it under Fennec's
+  supervision tree providing the following configuration:
+
+      config :fennec, :servers,
+        udp: [ip: {192,168, 1, 21}, port: 32323]
+
+  ...or hook it up to your supervision tree:
 
       children = [
         supervisor(Fennec.UDP, [[port: 3478]]),
@@ -13,6 +18,13 @@ defmodule Fennec.UDP do
 
   You can also start a server under Fennec's supervision tree
   using `start/1`.
+
+  ## Options
+
+  All methods of starting a server accept the same configuration options
+  passed as a keyword list:
+  * `:port` - the port which server should be bound to
+  * `:ip` - the address of an interface which server should listen on
 
   You may start multiple UDP servers at a time.
   """
