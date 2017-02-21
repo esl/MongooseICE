@@ -4,12 +4,14 @@ defmodule Fennec.Mixfile do
   def project do
     [app: :fennec,
      version: "0.1.0",
+     name: "Fennec",
      description: "STUN/TURN server",
      elixir: "~> 1.4",
      elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      deps: deps(),
+     package: package(),
      docs: docs(),
      dialyzer: dialyzer(),
      test_coverage: test_coverage(),
@@ -30,7 +32,13 @@ defmodule Fennec.Mixfile do
      {:dialyxir, "~> 0.4", runtime: false, only: :dev},
      {:excoveralls, "~> 0.5", runtime: false, only: :test},
      {:inch_ex, "~> 0.5", runtime: false, only: :dev},
-     {:jerboa, github: "esl/jerboa"}]
+     {:jerboa, "~> 0.1.0"}]
+  end
+
+  defp package do
+    [licenses: ["Apache 2.0"],
+     maintainers: ["Erlang Solutions"],
+     links: %{"GitHub" => "https://github.com/esl/fennec"}]
   end
 
   defp docs do

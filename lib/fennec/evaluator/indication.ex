@@ -1,7 +1,5 @@
 defmodule Fennec.Evaluator.Indication do
   @moduledoc false
-  # Common to ALL INDICATIONS. E.g. all requests wind up as a success
-  # response OR a failure response.
 
   alias Jerboa.Params
 

@@ -3,6 +3,8 @@
 [![Build Status][BUILD BADGE]][BUILD LINK]
 [![Coverage Status][COVERAGE BADGE]][COVERAGE LINK]
 
+[Documentation](https://hexdocs.pm/fennec/0.1.0)
+
 Fennec is a STUN server by [Erlang Solutions][OUR SITE] whose internals aim to be well written and tested.
 
 ## Rationale
@@ -19,6 +21,16 @@ Some helpful technical material:
 The reason why is described in [this][SIGNALING] tutorial.
 Our [XMPP server][MONGOOSE], MongooseIM, is perfect for building a combination of signaling and chat applications
 * Find the STUN, TURN, and ICE RFCs (at the IETF site)
+
+### Installation
+
+Fennec is available on [Hex](https://hex.pm/packages/fennec). To use it, just add it to your dependencies:
+
+```elixir
+def deps do
+  [{:fennec, "~> 0.1.0"}]
+end
+```
 
 ### Checklist of STUN/TURN methods supported by Fennec
 
