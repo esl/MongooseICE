@@ -6,6 +6,7 @@ defmodule Fennec.Mixfile do
      version: "0.1.0",
      name: "Fennec",
      description: "STUN/TURN server",
+     source_url: "https://github.com/esl/fennec",
      elixir: "~> 1.4",
      elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
