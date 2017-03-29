@@ -61,9 +61,10 @@ defmodule Fennec.UDP.Worker do
     {:stop, :normal, state}
   end
 
-  defp timeout(%{turn: %TURN{allocation_socket: nil}}), do: @timeout
-  defp timeout(%{turn: %TURN{allocation_time: refreshed_at}}) do
+  defp timeout(%{turn: %TURN{allocation: nil}}), do: @timeout
+  defp timeout(%{turn: %TURN{allocation: allocation}}) do
+    %TURN.Allocation{expire_at: expire_at} = allocation
     now = System.system_time(:second)
-    now - refreshed_at
+    max(0, expire_at - now) 
   end
 end

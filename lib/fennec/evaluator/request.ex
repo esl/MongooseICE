@@ -8,6 +8,7 @@ defmodule Fennec.Evaluator.Request do
   def service(params, changes, turn_state) do
     case service_(params, changes, turn_state) do
       {new_params, new_turn_state} ->
+        IO.puts inspect new_turn_state 
         {response(new_params), new_turn_state}
       new_params ->
         {response(new_params), turn_state}
@@ -18,8 +19,8 @@ defmodule Fennec.Evaluator.Request do
     case method(p) do
       :binding ->
         Fennec.Evaluator.Binding.Request.service(p, changes, turn_state)
-      _ ->
-        {:error, :unsupported_method}
+      :allocate ->
+        Fennec.Evaluator.Allocate.Request.service(p, changes, turn_state)
     end
   end
 
@@ -27,18 +28,18 @@ defmodule Fennec.Evaluator.Request do
     Params.get_method(x)
   end
 
-  defp response(x) do
-    case errors?(x) do
+  defp response(result) do
+    case errors?(result) do
       false ->
-        success(x)
+        success(result)
       true ->
-        failure(x)
+        failure(result)
     end
   end
 
-  defp errors?(%Params{attributes: _}) do
-    false
-  end
+  defp errors?(%Params{attributes: _}), do: false
+  defp errors?(:error), do: true
+
 
   defp success(x) do
     Params.put_class(x, :success)

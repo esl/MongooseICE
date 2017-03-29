@@ -19,6 +19,15 @@ defmodule FennecTest do
 
   describe "(IPv4) Fennec over UDP Transport" do
 
+    test "send allocate request; recieve success response", %{client: alice} do
+
+      ## When:
+      x = Jerboa.Client.allocate(alice)
+    
+      ## Then:
+      assert family(x) == "IPv4"
+    end
+
     test "send binding request; recieve success response", %{client: alice} do
 
       ## When:
@@ -42,7 +51,7 @@ defmodule FennecTest do
 
   defp family({:ok, {address, _}}) when tuple_size(address) == 4, do: "IPv4"
   defp family({:ok, {address, _}}) when tuple_size(address) == 8, do: "IPv6"
-  defp family(_), do: "unknown"
+  defp family(r), do: r
 
   defp ok?(x) do
     x == :ok
