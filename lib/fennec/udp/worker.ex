@@ -7,6 +7,7 @@ defmodule Fennec.UDP.Worker do
   # it simply crashes.
 
   alias Fennec.UDP
+  alias Fennec.TURN
   alias Fennec.UDP.{WorkerSupervisor, Dispatcher}
 
   use GenServer
@@ -16,7 +17,8 @@ defmodule Fennec.UDP.Worker do
 
   @type state :: %{socket: :gen_udp.socket,
                    ip: :inet.ip_address,
-                   port: :inet.port_number}
+                   port: :inet.port_number,
+                   turn: %TURN{}}
 
   # Starts a UDP worker
   @spec start(atom, UDP.socket, Fennec.ip, Fennec.portn) :: {:ok, pid} | :error
@@ -38,20 +40,30 @@ defmodule Fennec.UDP.Worker do
 
   def init([dispatcher, socket, ip, port]) do
     _ = Dispatcher.register_worker(dispatcher, self(), ip, port)
-    {:ok, %{socket: socket, ip: ip, port: port}}
+    {:ok, %{socket: socket, ip: ip, port: port, turn: %TURN{}}}
   end
 
   def handle_cast({:process_data, data}, state) do
-    case Fennec.STUN.process_message!(data, state.ip, state.port) do
-      :void ->
-        :ok
-      resp ->
-        :ok = :gen_udp.send(state.socket, state.ip, state.port, resp)
-    end
-    {:noreply, state, @timeout}
+    next_state =
+      case Fennec.STUN.process_message(data, state.ip, state.port, state.turn) do
+        {:ok, :void} ->
+          state
+        {:ok, {resp, new_turn_state}} ->
+          :ok = :gen_udp.send(state.socket, state.ip, state.port, resp)
+          %{state | turn: new_turn_state}
+        {:error, _reason} ->
+          state
+      end
+    {:noreply, next_state, timeout(next_state)}
   end
 
   def handle_info(:timeout, state) do
     {:stop, :normal, state}
+  end
+
+  defp timeout(%{turn: %TURN{allocation_socket: nil}}), do: @timeout
+  defp timeout(%{turn: %TURN{allocation_time: refreshed_at}}) do
+    now = System.system_time(:second)
+    now - refreshed_at
   end
 end

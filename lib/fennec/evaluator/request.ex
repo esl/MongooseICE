@@ -2,20 +2,24 @@ defmodule Fennec.Evaluator.Request do
   @moduledoc false
 
   alias Jerboa.Params
+  alias Fennec.TURN
 
-  @spec service(Params.t, map) :: Params.t
-  def service(parameters, changes) do
-    parameters
-    |> service_(changes)
-    |> response
+  @spec service(Params.t, map, %TURN{}) :: Params.t
+  def service(params, changes, turn_state) do
+    case service_(params, changes, turn_state) do
+      {new_params, new_turn_state} ->
+        {response(new_params), new_turn_state}
+      new_params ->
+        {response(new_params), turn_state}
+    end
   end
 
-  def service_(p, changes) do
+  def service_(p, changes, turn_state) do
     case method(p) do
       :binding ->
-        Fennec.Evaluator.Binding.Request.service(p, changes)
+        Fennec.Evaluator.Binding.Request.service(p, changes, turn_state)
       _ ->
-        :error
+        {:error, :unsupported_method}
     end
   end
 

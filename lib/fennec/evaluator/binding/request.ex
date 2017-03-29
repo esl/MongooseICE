@@ -3,8 +3,8 @@ defmodule Fennec.Evaluator.Binding.Request do
 
   alias Jerboa.Format
 
-  @spec service(Params.t, map) :: Params.t
-  def service(x, %{address: a, port: p}) do
+  @spec service(Params.t, map, %Fennec.TURN{}) :: Params.t
+  def service(x, %{address: a, port: p}, _turn_state) do
     %{x | attributes: [attribute(family(a), a, p)]}
   end
 
