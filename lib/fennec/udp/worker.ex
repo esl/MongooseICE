@@ -11,6 +11,7 @@ defmodule Fennec.UDP.Worker do
   alias Fennec.UDP.{WorkerSupervisor, Dispatcher}
 
   use GenServer
+  require Logger
 
   # should be configurable
   @timeout 5_000
@@ -57,14 +58,24 @@ defmodule Fennec.UDP.Worker do
     {:noreply, next_state, timeout(next_state)}
   end
 
+  def handle_info({:udp, socket, ip, port, data}, state = %{turn:
+                  %TURN{allocation: %TURN.Allocation{socket: socket}}}) do
+    _ = handle_peer_data(ip, port, data, state)
+    {:noreply, state}
+  end
+
   def handle_info(:timeout, state) do
     {:stop, :normal, state}
+  end
+
+  defp handle_peer_data(ip, port, data, _state) do
+    Logger.debug(~s"Peer #{ip}:#{port} sent data: #{data}")
   end
 
   defp timeout(%{turn: %TURN{allocation: nil}}), do: @timeout
   defp timeout(%{turn: %TURN{allocation: allocation}}) do
     %TURN.Allocation{expire_at: expire_at} = allocation
     now = System.system_time(:second)
-    max(0, expire_at - now) 
+    max(0, expire_at - now)
   end
 end

@@ -11,23 +11,33 @@ defmodule Fennec.Evaluator.Allocate.Request do
     req_id = Params.get_id(x)
     case turn_state do
       %TURN{allocation: %TURN.Allocation{owner: ^req_id}} ->
-        {x, turn_state}
+        allocation_params(x, changes, turn_state)
       %TURN{allocation: %TURN.Allocation{}} ->
-        :error
+        error_code = %Attribute.ErrorCode{code: 437}
+        {%{x | attributes: [error_code]}, turn_state}
       %TURN{allocation: nil} ->
         allocate(x, changes, turn_state)
     end
   end
 
-  defp allocate(x, %{address: a, port: p}, turn_state) do
-    {:ok, socket} = :gen_udp.open(0, [:binary, :inet, {:active, true}])
-    {:ok, {addr, port}} = :inet.sockname(socket)
+  defp allocate(x, changes, turn_state) do
+    addr = Application.get_env(:fennec, :relay_addr, {127, 0, 0, 1})
+    {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
     allocation = %Fennec.TURN.Allocation{
       socket: socket,
       expire_at: System.system_time(:second) + @lifetime,
       owner: Params.get_id(x)
     }
     new_turn_state = %{turn_state | allocation: allocation}
+    allocation_params(x, changes, new_turn_state)
+  end
+
+  defp allocation_params(x, %{address: a, port: p},
+                         turn_state = %TURN{allocation: allocation}) do
+    addr = Application.get_env(:fennec, :relay_addr, {127, 0, 0, 1})
+    %TURN.Allocation{socket: socket, expire_at: expire_at} = allocation
+    {:ok, port} = :inet.port(socket)
+    lifetime = max(0, expire_at - System.system_time(:second))
     attrs = [
       %Attribute.XORMappedAddress{
         family: family(a),
@@ -40,12 +50,10 @@ defmodule Fennec.Evaluator.Allocate.Request do
         port: port
       },
       %Attribute.Lifetime{
-        duration: @lifetime
+        duration: lifetime
       }
     ]
-
-    IO.puts inspect attrs
-    {%{x | attributes: attrs}, new_turn_state}
+    {%{x | attributes: attrs}, turn_state}
   end
 
   defp family(x) do
