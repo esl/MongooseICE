@@ -7,9 +7,9 @@ defmodule FennecTest do
 
     ## Given:
     import Fennec.Test.Helper.Server, only: [configuration: 1]
-    cfg = %{address: a, port: p} = configuration("Fennec (local)")
+    %{address: a, port: p} = configuration("Fennec (local)")
     Fennec.UDP.start_link(ip: a, port: p)
-    {:ok, alice} = Jerboa.Client.start(server: cfg)
+    {:ok, alice} = Jerboa.Client.start(server: {a, p})
     on_exit fn ->
       :ok = Jerboa.Client.stop(alice)
     end
@@ -40,9 +40,9 @@ defmodule FennecTest do
     end
   end
 
-  defp family({address, _}) when tuple_size(address) == 4 do
-    "IPv4"
-  end
+  defp family({:ok, {address, _}}) when tuple_size(address) == 4, do: "IPv4"
+  defp family({:ok, {address, _}}) when tuple_size(address) == 8, do: "IPv6"
+  defp family(_), do: "unknown"
 
   defp ok?(x) do
     x == :ok

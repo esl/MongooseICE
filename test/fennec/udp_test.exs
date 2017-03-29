@@ -3,7 +3,6 @@ defmodule Fennec.UDPTest do
 
   alias Jerboa.Params
   alias Jerboa.Format
-  alias Jerboa.Format.Body.Attribute
   alias Jerboa.Format.Body.Attribute.XORMappedAddress
 
   @recv_timeout 5000
@@ -33,10 +32,9 @@ defmodule Fennec.UDPTest do
                      method: :binding,
                      identifier: ^id,
                      attributes: [a]} = params
-      assert %Attribute{name: XORMappedAddress, value: v} = a
       assert %XORMappedAddress{address: ^client_address,
                                port: ^client_port,
-                               family: :ipv6} = v
+                               family: :ipv6} = a
     end
   end
 
