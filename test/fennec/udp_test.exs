@@ -43,8 +43,8 @@ defmodule Fennec.UDPTest do
   describe "allocate request" do
 
     setup ctx do
-      test_case_id = Map.get(ctx, :test_case_id, 0)
-      port_mod = test_case_id * 100
+      test_case_id = ctx.line
+      port_mod = test_case_id * 10
       udp =
         udp_connect({0, 0, 0, 0, 0, 0, 0, 1}, 12_100 + port_mod,
                     {0, 0, 0, 0, 0, 0, 0, 1}, 42_100 + port_mod, 1)
@@ -52,7 +52,7 @@ defmodule Fennec.UDPTest do
         udp_close(udp)
       end
 
-      {:ok, [udp: udp, test_case_id: test_case_id + 1]}
+      {:ok, [udp: udp]}
     end
 
     test "fails without RequestedTransport attribute", ctx do
