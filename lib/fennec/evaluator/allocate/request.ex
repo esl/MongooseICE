@@ -11,22 +11,22 @@ defmodule Fennec.Evaluator.Allocate.Request do
 
 
     request_status =
-      {:valid, x}
-      |> maybe(&verify_existing_allocation/3, [changes, turn_state])
-      |> maybe(&verify_requested_transport/1)
-      |> maybe(&verify_unknown_attributes/1)
+      {:valid, x, %{}}
+      |> maybe(&verify_existing_allocation/4, [changes, turn_state])
+      |> maybe(&verify_requested_transport/2)
+      |> maybe(&verify_unknown_attributes/2)
 
     case request_status do
       {:error, error_code} ->
         {%{x | attributes: [error_code]}, turn_state}
       {:ok, {new_params, new_turn_state}} ->
         {new_params, new_turn_state}
-      {:valid, _} ->
-        allocate(x, changes, turn_state)
+      {:valid, _, state} ->
+        allocate(x, state, changes, turn_state)
     end
   end
 
-  defp allocate(x, changes, turn_state) do
+  defp allocate(x, _state, changes, turn_state) do
     addr = Application.get_env(:fennec, :relay_addr, {127, 0, 0, 1})
     {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
     allocation = %Fennec.TURN.Allocation{
@@ -63,7 +63,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
     {%{x | attributes: attrs}, turn_state}
   end
 
-  defp verify_existing_allocation(x, changes, turn_state) do
+  defp verify_existing_allocation(x, state, changes, turn_state) do
     req_id = Params.get_id(x)
     case turn_state do
       %TURN{allocation: %TURN.Allocation{owner: ^req_id}} ->
@@ -71,25 +71,25 @@ defmodule Fennec.Evaluator.Allocate.Request do
       %TURN{allocation: %TURN.Allocation{}} ->
         {:error, %Attribute.ErrorCode{code: 437}}
       %TURN{allocation: nil} ->
-        {:valid, x}
+        {:valid, x, state}
     end
   end
 
-  defp verify_requested_transport(x) do
+  defp verify_requested_transport(x, state) do
     case Params.get_attr(x, Attribute.RequestedTransport) do
       nil ->
         {:error, %Attribute.ErrorCode{code: 400}}
       %Attribute.RequestedTransport{protocol: :udp} = t ->
-        {:valid, %{x | attributes: x.attributes -- [t]}}
+        {:valid, %{x | attributes: x.attributes -- [t]}, state}
       _ ->
         {:error, %Attribute.ErrorCode{code: 437}}
       end
   end
 
-  defp verify_unknown_attributes(x) do
+  defp verify_unknown_attributes(x, state) do
     case Params.get_attrs(x) do
       [] ->
-        {:valid, x}
+        {:valid, x, state}
       _ ->
         {:error, %Attribute.ErrorCode{code: 420}}
       end
@@ -97,7 +97,9 @@ defmodule Fennec.Evaluator.Allocate.Request do
 
   defp maybe(result, check), do: maybe(result, check, [])
 
-  defp maybe({:valid, x}, check, args), do: apply(check, [x | args])
+  defp maybe({:valid, x, state}, check, args) do
+    apply(check, [x, state | args])
+  end
   defp maybe({:ok, resp}, _check, _args), do: {:ok, resp}
   defp maybe({:error, error_code}, _check, _x), do: {:error, error_code}
 
