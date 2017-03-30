@@ -4,7 +4,8 @@ defmodule Fennec.UDPTest do
   alias Jerboa.Params
   alias Jerboa.Format
   alias Jerboa.Format.Body.Attribute.{XORMappedAddress, Lifetime,
-                                      XORRelayedAddress, ErrorCode}
+                                      XORRelayedAddress, ErrorCode,
+                                      RequestedTransport}
 
   @recv_timeout 5000
 
@@ -40,6 +41,35 @@ defmodule Fennec.UDPTest do
   end
 
   describe "allocate request" do
+
+    test "fails without RequestedTransport attribute" do
+      server_port = 12_122
+      server_address = {0, 0, 0, 0, 0, 0, 0, 1}
+      client_port = 43_435
+      client_address = {0, 0, 0, 0, 0, 0, 0, 1}
+      Application.put_env(:fennec, :relay_addr, server_address)
+
+      Fennec.UDP.start_link(ip: server_address, port: server_port)
+      id = :crypto.strong_rand_bytes(12)
+      req = allocate_request(id, [])
+
+      {:ok, sock} = :gen_udp.open(client_port,
+                                  [:binary, active: false, ip: client_address])
+      :ok = :gen_udp.send(sock, server_address, server_port, req)
+
+      assert {:ok,
+              {^server_address,
+               ^server_port,
+               resp}} = :gen_udp.recv(sock, 0, @recv_timeout)
+      :gen_udp.close(sock)
+      params = Format.decode!(resp)
+      assert %Params{class: :failure,
+                     method: :allocate,
+                     identifier: ^id,
+                     attributes: [error]} = params
+
+      assert %ErrorCode{code: 400} = error
+    end
 
     test "returns response with IPv6 XOR relayed address attribute" do
       server_port = 12_122
@@ -175,6 +205,12 @@ defmodule Fennec.UDPTest do
   end
 
   defp allocate_request(id) do
-    %Params{class: :request, method: :allocate, identifier: id} |> Format.encode()
+    allocate_request(id, [%RequestedTransport{protocol: :udp}])
+  end
+
+  defp allocate_request(id, attrs) do
+    %Params{class: :request, method: :allocate, identifier: id,
+            attributes: attrs}
+    |> Format.encode()
   end
 end

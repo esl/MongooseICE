@@ -8,14 +8,19 @@ defmodule Fennec.Evaluator.Allocate.Request do
 
   @spec service(Params.t, map, %TURN{}) :: Params.t
   def service(x, changes, turn_state) do
-    req_id = Params.get_id(x)
-    case turn_state do
-      %TURN{allocation: %TURN.Allocation{owner: ^req_id}} ->
-        allocation_params(x, changes, turn_state)
-      %TURN{allocation: %TURN.Allocation{}} ->
-        error_code = %Attribute.ErrorCode{code: 437}
+
+
+    request_status =
+      :valid
+      |> maybe(&verify_existing_allocation/3, [x, changes, turn_state])
+      |> maybe(&verify_requested_transport/1, [x])
+
+    case request_status do
+      {:error, error_code} ->
         {%{x | attributes: [error_code]}, turn_state}
-      %TURN{allocation: nil} ->
+      {:ok, {new_params, new_turn_state}} ->
+        {new_params, new_turn_state}
+      :valid ->
         allocate(x, changes, turn_state)
     end
   end
@@ -28,6 +33,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
       expire_at: System.system_time(:second) + @lifetime,
       owner: Params.get_id(x)
     }
+
     new_turn_state = %{turn_state | allocation: allocation}
     allocation_params(x, changes, new_turn_state)
   end
@@ -55,6 +61,33 @@ defmodule Fennec.Evaluator.Allocate.Request do
     ]
     {%{x | attributes: attrs}, turn_state}
   end
+
+  defp verify_existing_allocation(x, changes, turn_state) do
+    req_id = Params.get_id(x)
+    case turn_state do
+      %TURN{allocation: %TURN.Allocation{owner: ^req_id}} ->
+        {:ok, allocation_params(x, changes, turn_state)}
+      %TURN{allocation: %TURN.Allocation{}} ->
+        {:error, %Attribute.ErrorCode{code: 437}}
+      %TURN{allocation: nil} ->
+        :valid
+    end
+  end
+
+  defp verify_requested_transport(x) do
+    case Params.get_attr(x, Attribute.RequestedTransport) do
+      nil ->
+        {:error, %Attribute.ErrorCode{code: 400}}
+      %Attribute.RequestedTransport{protocol: :udp} ->
+        :valid
+      _ ->
+        {:error, %Attribute.ErrorCode{code: 437}}
+      end
+  end
+
+  defp maybe(:valid, check, args), do: apply(check, args)
+  defp maybe({:ok, resp}, _check, _args), do: {:ok, resp}
+  defp maybe({:error, error_code}, _check, _x), do: {:error, error_code}
 
   defp family(x) do
     case tuple_size(x) do
