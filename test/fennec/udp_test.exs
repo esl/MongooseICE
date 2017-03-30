@@ -12,9 +12,9 @@ defmodule Fennec.UDPTest do
   describe "binding request" do
 
     test "returns response with IPv6 XOR mapped address attribute" do
-      server_port = 12_121
+      server_port = 13_100
       server_address = {0, 0, 0, 0, 0, 0, 0, 1}
-      client_port = 43_434
+      client_port = 43_100
       client_address = {0, 0, 0, 0, 0, 0, 0, 1}
       Fennec.UDP.start_link(ip: server_address, port: server_port)
       id = :crypto.strong_rand_bytes(12)
@@ -43,9 +43,9 @@ defmodule Fennec.UDPTest do
   describe "allocate request" do
 
     test "fails without RequestedTransport attribute" do
-      server_port = 12_122
+      server_port = 13_101
       server_address = {0, 0, 0, 0, 0, 0, 0, 1}
-      client_port = 43_435
+      client_port = 43_101
       client_address = {0, 0, 0, 0, 0, 0, 0, 1}
       Application.put_env(:fennec, :relay_addr, server_address)
 
@@ -69,6 +69,38 @@ defmodule Fennec.UDPTest do
                      attributes: [error]} = params
 
       assert %ErrorCode{code: 400} = error
+    end
+
+    test "fails with unknown attribute" do
+      server_port = 13_102
+      server_address = {0, 0, 0, 0, 0, 0, 0, 1}
+      client_port = 43_102
+      client_address = {0, 0, 0, 0, 0, 0, 0, 1}
+      Application.put_env(:fennec, :relay_addr, server_address)
+
+      Fennec.UDP.start_link(ip: server_address, port: server_port)
+      id = :crypto.strong_rand_bytes(12)
+      req = allocate_request(id, [
+        %RequestedTransport{protocol: :udp},
+        %Lifetime{duration: 5}
+      ])
+
+      {:ok, sock} = :gen_udp.open(client_port,
+                                  [:binary, active: false, ip: client_address])
+      :ok = :gen_udp.send(sock, server_address, server_port, req)
+
+      assert {:ok,
+              {^server_address,
+               ^server_port,
+               resp}} = :gen_udp.recv(sock, 0, @recv_timeout)
+      :gen_udp.close(sock)
+      params = Format.decode!(resp)
+      assert %Params{class: :failure,
+                     method: :allocate,
+                     identifier: ^id,
+                     attributes: [error]} = params
+
+      assert %ErrorCode{code: 420} = error
     end
 
     test "returns response with IPv6 XOR relayed address attribute" do
