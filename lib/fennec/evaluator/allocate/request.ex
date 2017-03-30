@@ -6,10 +6,8 @@ defmodule Fennec.Evaluator.Allocate.Request do
   alias Fennec.TURN
   @lifetime 10 * 60
 
-  @spec service(Params.t, map, %TURN{}) :: Params.t
+  @spec service(Params.t, map, TURN.t) :: {Params.t, TURN.t}
   def service(x, changes, turn_state) do
-
-
     request_status =
       {:valid, x, %{}}
       |> maybe(&verify_existing_allocation/4, [changes, turn_state])
@@ -77,12 +75,12 @@ defmodule Fennec.Evaluator.Allocate.Request do
 
   defp verify_requested_transport(x, state) do
     case Params.get_attr(x, Attribute.RequestedTransport) do
-      nil ->
-        {:error, %Attribute.ErrorCode{code: 400}}
       %Attribute.RequestedTransport{protocol: :udp} = t ->
         {:valid, %{x | attributes: x.attributes -- [t]}, state}
-      _ ->
+      %Attribute.RequestedTransport{} ->
         {:error, %Attribute.ErrorCode{code: 437}}
+      _ ->
+        {:error, %Attribute.ErrorCode{code: 400}}
       end
   end
 

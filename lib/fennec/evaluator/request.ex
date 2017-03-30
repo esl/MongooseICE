@@ -5,7 +5,7 @@ defmodule Fennec.Evaluator.Request do
   alias Jerboa.Format.Body.Attribute
   alias Fennec.TURN
 
-  @spec service(Params.t, map, %TURN{}) :: Params.t
+  @spec service(Params.t, map, TURN.t) :: {Params.t, TURN.t}
   def service(params, changes, turn_state) do
     case service_(params, changes, turn_state) do
       {new_params, new_turn_state} ->
@@ -15,7 +15,7 @@ defmodule Fennec.Evaluator.Request do
     end
   end
 
-  def service_(p, changes, turn_state) do
+  defp service_(p, changes, turn_state) do
     case method(p) do
       :binding ->
         Fennec.Evaluator.Binding.Request.service(p, changes, turn_state)
@@ -39,7 +39,7 @@ defmodule Fennec.Evaluator.Request do
 
   defp errors?(%Params{attributes: attrs}) do
      attrs
-     |> Enum.any? &error_attr?/1
+     |> Enum.any?(&error_attr?/1)
   end
 
   defp success(x) do

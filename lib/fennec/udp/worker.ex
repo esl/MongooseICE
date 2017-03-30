@@ -19,7 +19,8 @@ defmodule Fennec.UDP.Worker do
   @type state :: %{socket: :gen_udp.socket,
                    ip: :inet.ip_address,
                    port: :inet.port_number,
-                   turn: %TURN{}}
+                   turn: TURN.t
+                 }
 
   # Starts a UDP worker
   @spec start(atom, UDP.socket, Fennec.ip, Fennec.portn) :: {:ok, pid} | :error

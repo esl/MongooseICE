@@ -23,7 +23,7 @@ defmodule FennecTest do
 
       ## When:
       x = Jerboa.Client.allocate(alice)
-    
+
       ## Then:
       assert family(x) == "IPv4"
     end

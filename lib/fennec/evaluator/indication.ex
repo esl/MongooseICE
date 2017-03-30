@@ -2,8 +2,9 @@ defmodule Fennec.Evaluator.Indication do
   @moduledoc false
 
   alias Jerboa.Params
+  alias Fennec.TURN
 
-  @spec service(Params.t, map, %Fennec.TURN{}) :: Params.t | :void
+  @spec service(Params.t, map, TURN.t) :: Params.t | :void
   def service(parameters, _, _turn_state) do
     case method(parameters) do
       :binding ->
