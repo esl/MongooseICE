@@ -7,8 +7,22 @@ defmodule Fennec.Auth do
   alias Jerboa.Format.Body.Attribute.{Username, Nonce, Realm}
   alias Jerboa.Params
 
+  @nonce_bytes 48
+  @nonce_lifetime_seconds 60 * 60 # 1h
+
   def get_secret do
     Application.get_env(:fennec, :secret)
+  end
+
+  def nonce_lifetime() do
+    @nonce_lifetime_seconds
+  end
+
+  def gen_nonce do
+    @nonce_bytes
+    |> :crypto.strong_rand_bytes()
+    |> :binary.decode_unsigned()
+    |> Integer.to_string(16)
   end
 
   def authorize(params, _turn_state) do
