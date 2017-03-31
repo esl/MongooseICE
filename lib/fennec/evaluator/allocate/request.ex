@@ -9,7 +9,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
   @spec service(Params.t, map, TURN.t) :: {Params.t, TURN.t}
   def service(params, changes, turn_state) do
     request_status =
-      {:valid, params, %{}}
+      {:continue, params, %{}}
       |> maybe(&verify_existing_allocation/4, [changes, turn_state])
       |> maybe(&verify_requested_transport/2)
       |> maybe(&verify_unknown_attributes/2)
@@ -17,9 +17,9 @@ defmodule Fennec.Evaluator.Allocate.Request do
     case request_status do
       {:error, error_code} ->
         {%{params | attributes: [error_code]}, turn_state}
-      {:ok, {new_params, new_turn_state}} ->
+      {:respond, {new_params, new_turn_state}} ->
         {new_params, new_turn_state}
-      {:valid, _, state} ->
+      {:continue, _, state} ->
         allocate(params, state, changes, turn_state)
     end
   end
@@ -65,18 +65,18 @@ defmodule Fennec.Evaluator.Allocate.Request do
     req_id = Params.get_id(params)
     case turn_state do
       %TURN{allocation: %TURN.Allocation{owner: ^req_id}} ->
-        {:ok, allocation_params(params, changes, turn_state)}
+        {:respond, allocation_params(params, changes, turn_state)}
       %TURN{allocation: %TURN.Allocation{}} ->
         {:error, %Attribute.ErrorCode{code: 437}}
       %TURN{allocation: nil} ->
-        {:valid, params, state}
+        {:continue, params, state}
     end
   end
 
   defp verify_requested_transport(params, state) do
     case Params.get_attr(params, Attribute.RequestedTransport) do
       %Attribute.RequestedTransport{protocol: :udp} = t ->
-        {:valid, %{params | attributes: params.attributes -- [t]}, state}
+        {:continue, %{params | attributes: params.attributes -- [t]}, state}
       %Attribute.RequestedTransport{} ->
         {:error, %Attribute.ErrorCode{code: 437}}
       _ ->
@@ -87,7 +87,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
   defp verify_unknown_attributes(params, state) do
     case Params.get_attrs(params) do
       [] ->
-        {:valid, params, state}
+        {:continue, params, state}
       _ ->
         {:error, %Attribute.ErrorCode{code: 420}}
       end
@@ -95,13 +95,13 @@ defmodule Fennec.Evaluator.Allocate.Request do
 
   defp maybe(result, check), do: maybe(result, check, [])
 
-  defp maybe({:valid, params, state}, check, args) do
+  defp maybe({:continue, params, state}, check, args) do
     apply(check, [params, state | args])
   end
-  defp maybe({:ok, resp}, _check, _args), do: {:ok, resp}
+  defp maybe({:respond, resp}, _check, _args), do: {:respond, resp}
   defp maybe({:error, error_code}, _check, _x), do: {:error, error_code}
 
   defp family(addr) when tuple_size(addr) == 4, do: :ipv4
   defp family(addr) when tuple_size(addr) == 8, do: :ipv6
-  
+
 end
