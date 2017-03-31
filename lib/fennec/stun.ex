@@ -6,7 +6,7 @@ defmodule Fennec.STUN do
   alias Jerboa.Params
   alias Fennec.Evaluator
   alias Fennec.UDP
-  alias Fennec.STUN.Auth
+  alias Fennec.Auth
 
   @spec process_message(binary, Fennec.client_info, UDP.server_opts, TURN.t) ::
     {:ok, {binary, %TURN{}}} | {:ok, :void}
