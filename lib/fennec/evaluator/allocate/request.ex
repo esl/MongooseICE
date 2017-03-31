@@ -85,12 +85,14 @@ defmodule Fennec.Evaluator.Allocate.Request do
   end
 
   defp verify_unknown_attributes(params, state) do
-    case Params.get_attrs(params) do
-      [] ->
-        {:continue, params, state}
+    with u  <- Params.get_attr(params, Attribute.Username),
+         r  <- Params.get_attr(params, Attribute.Realm),
+         [] <- Params.get_attrs(params) -- [u, r] do
+      {:continue, params, state}
+    else
       _ ->
         {:error, %Attribute.ErrorCode{code: 420}}
-      end
+    end
   end
 
   defp maybe(result, check), do: maybe(result, check, [])

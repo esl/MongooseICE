@@ -11,11 +11,8 @@ defmodule Fennec.STUN.Auth do
   end
 
   def authorize(params, _turn_state) do
-    with u = %Username{} <- Params.get_attr(params, Username),
-         r = %Realm{}    <- Params.get_attr(params, Realm) do
-      # Right now, any authenticated user will do
-      {:ok, %Params{params | attributes: params.attributes -- [u, r]}}
-    end
+    # Right now, any authenticated user will do
+    {:ok, params}
   end
 
   def authenticate(params, turn_state) do
