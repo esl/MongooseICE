@@ -1,6 +1,6 @@
 defmodule Fennec.TURN.Allocation do
   @moduledoc """
-  This module defines a record that is used to represent active TURN allocation
+  This module defines a struct that is used to represent active TURN allocation
   made by a client.
   """
 
