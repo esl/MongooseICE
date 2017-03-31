@@ -1,8 +1,7 @@
 defmodule Fennec.TURN.Allocation do
-  @moduledoc """
-  This module defines a struct that is used to represent active TURN allocation
-  made by a client.
-  """
+  @moduledoc false
+  # This module defines a struct that is used to represent active TURN allocation
+  # made by a client.
 
   defstruct socket: nil, owner: nil, expire_at: 0
 

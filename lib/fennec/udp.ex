@@ -111,11 +111,6 @@ defmodule Fennec.UDP do
   end
 
   @doc false
-  def relay_sup_name(base_name) do
-    build_name(base_name, "RelaySupervisor")
-  end
-
-  @doc false
   defp build_name(base, suffix) do
     "#{base}.#{suffix}" |> String.to_atom()
   end
