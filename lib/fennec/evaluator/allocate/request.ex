@@ -7,10 +7,10 @@ defmodule Fennec.Evaluator.Allocate.Request do
   @lifetime 10 * 60
 
   @spec service(Params.t, map, TURN.t) :: {Params.t, TURN.t}
-  def service(params, changes, turn_state) do
+  def service(params, client, turn_state) do
     request_status =
       {:continue, params, %{}}
-      |> maybe(&verify_existing_allocation/4, [changes, turn_state])
+      |> maybe(&verify_existing_allocation/4, [client, turn_state])
       |> maybe(&verify_requested_transport/2)
       |> maybe(&verify_unknown_attributes/2)
 
@@ -20,11 +20,11 @@ defmodule Fennec.Evaluator.Allocate.Request do
       {:respond, {new_params, new_turn_state}} ->
         {new_params, new_turn_state}
       {:continue, _, state} ->
-        allocate(params, state, changes, turn_state)
+        allocate(params, state, client, turn_state)
     end
   end
 
-  defp allocate(params, _state, changes, turn_state) do
+  defp allocate(params, _state, client, turn_state) do
     addr = Application.get_env(:fennec, :relay_addr, {127, 0, 0, 1})
     {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
     allocation = %Fennec.TURN.Allocation{
@@ -34,7 +34,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
     }
 
     new_turn_state = %{turn_state | allocation: allocation}
-    allocation_params(params, changes, new_turn_state)
+    allocation_params(params, client, new_turn_state)
   end
 
   defp allocation_params(params, %{address: a, port: p},
@@ -61,11 +61,11 @@ defmodule Fennec.Evaluator.Allocate.Request do
     {%{params | attributes: attrs}, turn_state}
   end
 
-  defp verify_existing_allocation(params, state, changes, turn_state) do
+  defp verify_existing_allocation(params, state, client, turn_state) do
     req_id = Params.get_id(params)
     case turn_state do
       %TURN{allocation: %TURN.Allocation{owner: ^req_id}} ->
-        {:respond, allocation_params(params, changes, turn_state)}
+        {:respond, allocation_params(params, client, turn_state)}
       %TURN{allocation: %TURN.Allocation{}} ->
         {:error, %Attribute.ErrorCode{code: 437}}
       %TURN{allocation: nil} ->

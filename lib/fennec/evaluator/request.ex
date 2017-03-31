@@ -6,8 +6,8 @@ defmodule Fennec.Evaluator.Request do
   alias Fennec.TURN
 
   @spec service(Params.t, map, TURN.t) :: {Params.t, TURN.t}
-  def service(params, changes, turn_state) do
-    case service_(params, changes, turn_state) do
+  def service(params, client, turn_state) do
+    case service_(params, client, turn_state) do
       {new_params, new_turn_state} ->
         {response(new_params), new_turn_state}
       new_params ->
@@ -15,12 +15,12 @@ defmodule Fennec.Evaluator.Request do
     end
   end
 
-  defp service_(p, changes, turn_state) do
+  defp service_(p, client, turn_state) do
     case method(p) do
       :binding ->
-        Fennec.Evaluator.Binding.Request.service(p, changes, turn_state)
+        Fennec.Evaluator.Binding.Request.service(p, client, turn_state)
       :allocate ->
-        Fennec.Evaluator.Allocate.Request.service(p, changes, turn_state)
+        Fennec.Evaluator.Allocate.Request.service(p, client, turn_state)
     end
   end
 
