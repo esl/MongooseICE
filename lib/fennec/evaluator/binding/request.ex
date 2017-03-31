@@ -17,12 +17,7 @@ defmodule Fennec.Evaluator.Binding.Request do
     }
   end
 
-  defp family(params) do
-    case tuple_size(params) do
-      4 ->
-        :ipv4
-      8 ->
-        :ipv6
-    end
-  end
+  defp family(addr) when tuple_size(addr) == 4, do: :ipv4
+  defp family(addr) when tuple_size(addr) == 8, do: :ipv6
+  
 end

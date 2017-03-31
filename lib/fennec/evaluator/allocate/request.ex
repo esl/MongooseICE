@@ -101,12 +101,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
   defp maybe({:ok, resp}, _check, _args), do: {:ok, resp}
   defp maybe({:error, error_code}, _check, _x), do: {:error, error_code}
 
-  defp family(params) do
-    case tuple_size(params) do
-      4 ->
-        :ipv4
-      8 ->
-        :ipv6
-    end
-  end
+  defp family(addr) when tuple_size(addr) == 4, do: :ipv4
+  defp family(addr) when tuple_size(addr) == 8, do: :ipv6
+  
 end
