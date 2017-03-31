@@ -24,8 +24,8 @@ defmodule Fennec.Evaluator.Request do
     end
   end
 
-  defp method(x) do
-    Params.get_method(x)
+  defp method(params) do
+    Params.get_method(params)
   end
 
   defp response(result) do
@@ -42,12 +42,12 @@ defmodule Fennec.Evaluator.Request do
      |> Enum.any?(&error_attr?/1)
   end
 
-  defp success(x) do
-    Params.put_class(x, :success)
+  defp success(params) do
+    Params.put_class(params, :success)
   end
 
-  defp failure(x) do
-    Params.put_class(x, :failure)
+  defp failure(params) do
+    Params.put_class(params, :failure)
   end
 
   defp error_attr?(%Attribute.ErrorCode{}), do: true

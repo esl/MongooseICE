@@ -12,7 +12,7 @@ defmodule Fennec.Evaluator.Indication do
     end
   end
 
-  defp method(x) do
-    Params.get_method(x)
+  defp method(params) do
+    Params.get_method(params)
   end
 end

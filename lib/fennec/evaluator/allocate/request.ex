@@ -7,37 +7,37 @@ defmodule Fennec.Evaluator.Allocate.Request do
   @lifetime 10 * 60
 
   @spec service(Params.t, map, TURN.t) :: {Params.t, TURN.t}
-  def service(x, changes, turn_state) do
+  def service(params, changes, turn_state) do
     request_status =
-      {:valid, x, %{}}
+      {:valid, params, %{}}
       |> maybe(&verify_existing_allocation/4, [changes, turn_state])
       |> maybe(&verify_requested_transport/2)
       |> maybe(&verify_unknown_attributes/2)
 
     case request_status do
       {:error, error_code} ->
-        {%{x | attributes: [error_code]}, turn_state}
+        {%{params | attributes: [error_code]}, turn_state}
       {:ok, {new_params, new_turn_state}} ->
         {new_params, new_turn_state}
       {:valid, _, state} ->
-        allocate(x, state, changes, turn_state)
+        allocate(params, state, changes, turn_state)
     end
   end
 
-  defp allocate(x, _state, changes, turn_state) do
+  defp allocate(params, _state, changes, turn_state) do
     addr = Application.get_env(:fennec, :relay_addr, {127, 0, 0, 1})
     {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
     allocation = %Fennec.TURN.Allocation{
       socket: socket,
       expire_at: System.system_time(:second) + @lifetime,
-      owner: Params.get_id(x)
+      owner: Params.get_id(params)
     }
 
     new_turn_state = %{turn_state | allocation: allocation}
-    allocation_params(x, changes, new_turn_state)
+    allocation_params(params, changes, new_turn_state)
   end
 
-  defp allocation_params(x, %{address: a, port: p},
+  defp allocation_params(params, %{address: a, port: p},
                          turn_state = %TURN{allocation: allocation}) do
     addr = Application.get_env(:fennec, :relay_addr, {127, 0, 0, 1})
     %TURN.Allocation{socket: socket, expire_at: expire_at} = allocation
@@ -58,25 +58,25 @@ defmodule Fennec.Evaluator.Allocate.Request do
         duration: lifetime
       }
     ]
-    {%{x | attributes: attrs}, turn_state}
+    {%{params | attributes: attrs}, turn_state}
   end
 
-  defp verify_existing_allocation(x, state, changes, turn_state) do
-    req_id = Params.get_id(x)
+  defp verify_existing_allocation(params, state, changes, turn_state) do
+    req_id = Params.get_id(params)
     case turn_state do
       %TURN{allocation: %TURN.Allocation{owner: ^req_id}} ->
-        {:ok, allocation_params(x, changes, turn_state)}
+        {:ok, allocation_params(params, changes, turn_state)}
       %TURN{allocation: %TURN.Allocation{}} ->
         {:error, %Attribute.ErrorCode{code: 437}}
       %TURN{allocation: nil} ->
-        {:valid, x, state}
+        {:valid, params, state}
     end
   end
 
-  defp verify_requested_transport(x, state) do
-    case Params.get_attr(x, Attribute.RequestedTransport) do
+  defp verify_requested_transport(params, state) do
+    case Params.get_attr(params, Attribute.RequestedTransport) do
       %Attribute.RequestedTransport{protocol: :udp} = t ->
-        {:valid, %{x | attributes: x.attributes -- [t]}, state}
+        {:valid, %{params | attributes: params.attributes -- [t]}, state}
       %Attribute.RequestedTransport{} ->
         {:error, %Attribute.ErrorCode{code: 437}}
       _ ->
@@ -84,10 +84,10 @@ defmodule Fennec.Evaluator.Allocate.Request do
       end
   end
 
-  defp verify_unknown_attributes(x, state) do
-    case Params.get_attrs(x) do
+  defp verify_unknown_attributes(params, state) do
+    case Params.get_attrs(params) do
       [] ->
-        {:valid, x, state}
+        {:valid, params, state}
       _ ->
         {:error, %Attribute.ErrorCode{code: 420}}
       end
@@ -95,14 +95,14 @@ defmodule Fennec.Evaluator.Allocate.Request do
 
   defp maybe(result, check), do: maybe(result, check, [])
 
-  defp maybe({:valid, x, state}, check, args) do
-    apply(check, [x, state | args])
+  defp maybe({:valid, params, state}, check, args) do
+    apply(check, [params, state | args])
   end
   defp maybe({:ok, resp}, _check, _args), do: {:ok, resp}
   defp maybe({:error, error_code}, _check, _x), do: {:error, error_code}
 
-  defp family(x) do
-    case tuple_size(x) do
+  defp family(params) do
+    case tuple_size(params) do
       4 ->
         :ipv4
       8 ->

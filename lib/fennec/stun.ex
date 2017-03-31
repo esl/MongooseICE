@@ -8,8 +8,8 @@ defmodule Fennec.STUN do
     {:ok, {binary, %TURN{}}} | {:error, term}
   def process_message(data, ip, port, turn_state) do
     case Jerboa.Format.decode(data) do
-      {:ok, x} ->
-        case Fennec.Evaluator.service(x, %{address: ip, port: port}, turn_state) do
+      {:ok, params} ->
+        case Fennec.Evaluator.service(params, %{address: ip, port: port}, turn_state) do
           :void ->
             {:ok, :void}
           {resp, new_turn_state} when is_map(resp) ->

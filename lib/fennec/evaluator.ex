@@ -14,7 +14,7 @@ defmodule Fennec.Evaluator do
     end
   end
 
-  defp class(x) do
-    Params.get_class(x)
+  defp class(params) do
+    Params.get_class(params)
   end
 end
