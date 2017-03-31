@@ -9,7 +9,8 @@ defmodule FennecTest do
     import Fennec.Test.Helper.Server, only: [configuration: 1]
     %{address: a, port: p} = configuration("Fennec (local)")
     Fennec.UDP.start_link(ip: a, port: p)
-    {:ok, alice} = Jerboa.Client.start(server: {a, p})
+    Application.put_env(:fennec, :secret, "abc") 
+    {:ok, alice} = Jerboa.Client.start(server: {a, p}, username: "alice", secret: "abc")
     on_exit fn ->
       :ok = Jerboa.Client.stop(alice)
     end
