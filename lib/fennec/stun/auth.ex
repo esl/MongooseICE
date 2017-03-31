@@ -1,7 +1,6 @@
 defmodule Fennec.STUN.Auth do
-  @moduledoc """
-  This module implements authentication and authorization of the STUN protocol.
-  """
+  @moduledoc false
+  # This module implements authentication and authorization of the STUN protocol.
 
   alias Jerboa.Format.Body.Attribute
   alias Jerboa.Format.Body.Attribute.{Username, Nonce, Realm}
