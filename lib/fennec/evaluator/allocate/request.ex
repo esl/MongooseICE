@@ -13,28 +13,14 @@ defmodule Fennec.Evaluator.Allocate.Request do
       |> maybe(&verify_existing_allocation/4, [client, turn_state])
       |> maybe(&verify_requested_transport/2)
       |> maybe(&verify_unknown_attributes/2)
+      |> maybe(&allocate/4, [client, turn_state])
 
     case request_status do
       {:error, error_code} ->
         {%{params | attributes: [error_code]}, turn_state}
       {:respond, {new_params, new_turn_state}} ->
         {new_params, new_turn_state}
-      {:continue, _, state} ->
-        allocate(params, state, client, turn_state)
     end
-  end
-
-  defp allocate(params, _state, client, turn_state) do
-    addr = Application.get_env(:fennec, :relay_addr, {127, 0, 0, 1})
-    {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
-    allocation = %Fennec.TURN.Allocation{
-      socket: socket,
-      expire_at: System.system_time(:second) + @lifetime,
-      owner: Params.get_id(params)
-    }
-
-    new_turn_state = %{turn_state | allocation: allocation}
-    allocation_params(params, client, new_turn_state)
   end
 
   defp allocation_params(params, %{address: a, port: p},
@@ -59,6 +45,19 @@ defmodule Fennec.Evaluator.Allocate.Request do
       }
     ]
     {%{params | attributes: attrs}, turn_state}
+  end
+
+  defp allocate(params, _state, client, turn_state) do
+    addr = Application.get_env(:fennec, :relay_addr, {127, 0, 0, 1})
+    {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
+    allocation = %Fennec.TURN.Allocation{
+      socket: socket,
+      expire_at: System.system_time(:second) + @lifetime,
+      owner: Params.get_id(params)
+    }
+
+    new_turn_state = %{turn_state | allocation: allocation}
+    {:respond, allocation_params(params, client, new_turn_state)}
   end
 
   defp verify_existing_allocation(params, state, client, turn_state) do
