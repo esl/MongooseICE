@@ -7,6 +7,8 @@ defmodule Fennec.UDPTest do
                                       XORRelayedAddress, ErrorCode,
                                       RequestedTransport}
 
+  import Mock
+
   @recv_timeout 5000
 
   describe "binding request" do
@@ -228,8 +230,12 @@ defmodule Fennec.UDPTest do
   end
 
   defp udp_communicate(udp, client_id, req) do
+    with_mock Fennec.Auth, [:passthrough], [
+      maybe: fn(_, p, _) -> {:ok, p} end
+    ] do
      :ok = udp_send(udp, client_id, req)
      udp_recv(udp, client_id)
+   end
   end
 
   defp client_port(udp, client_id) do
