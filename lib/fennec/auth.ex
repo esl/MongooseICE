@@ -25,12 +25,12 @@ defmodule Fennec.Auth do
     |> Integer.to_string(16)
   end
 
-  def authorize(params, _turn_state) do
+  def authorize(params, _server, _turn_state) do
     # Right now, any authenticated user will do
     {:ok, params}
   end
 
-  def authenticate(params, turn_state) do
+  def authenticate(params, server, turn_state) do
     nonce = turn_state.nonce
     signed? = params.signed?
 
@@ -41,21 +41,21 @@ defmodule Fennec.Auth do
       {:ok, %Params{params | attributes: params.attributes -- [n]}}
     else
       false -> # Not verified -> error code 401
-        {:error, error_params(401, params, turn_state)}
+        {:error, error_params(401, params, server, turn_state)}
       _ when signed? -> # If message is signed and there are some attributes
                         # missing, we need to respond with error code 400
-        {:error, error_params(400, params, turn_state)}
+        {:error, error_params(400, params, server, turn_state)}
       %Nonce{} -> # Invalid nonce, error code 438
-        {:error, error_params(438, params, turn_state)}
+        {:error, error_params(438, params, server, turn_state)}
       nil when not signed? ->
-        {:error, error_params(401, params, turn_state)}
+        {:error, error_params(401, params, server, turn_state)}
     end
   end
 
-  def maybe(action_fun, params, turn_state) do
+  def maybe(action_fun, params, server, turn_state) do
     case should_authorize?(params) do
       true ->
-        action_fun.(params, turn_state)
+        action_fun.(params, server, turn_state)
       false ->
         {:ok, params}
     end
@@ -67,10 +67,10 @@ defmodule Fennec.Auth do
   defp should_authorize?(:request, :allocate), do: true
   defp should_authorize?(_, _), do: false
 
-  defp error_params(code, params, turn_state) do
+  defp error_params(code, params, server, turn_state) do
     %Params{params | attributes: [
       %Attribute.ErrorCode{code: code},
-      %Attribute.Realm{value: turn_state.realm},
+      %Attribute.Realm{value: server[:realm]},
       %Attribute.Nonce{value: turn_state.nonce}
     ]}
   end

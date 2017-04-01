@@ -13,8 +13,8 @@ defmodule Fennec.STUN do
   def process_message(data, client, server, turn_state) do
     with secret        <- Auth.get_secret(),
          {:ok, params} <- Jerboa.Format.decode(data, [secret: secret]),
-         {:ok, params} <- Auth.maybe(&Auth.authenticate/2, params, turn_state),
-         {:ok, params} <- Auth.maybe(&Auth.authorize/2, params, turn_state),
+         {:ok, params} <- Auth.maybe(&Auth.authenticate/3, params, server, turn_state),
+         {:ok, params} <- Auth.maybe(&Auth.authorize/3, params, server, turn_state),
          {resp, new_turn_state} <- Evaluator.service(params, client, server, turn_state) do
       {:ok, {Jerboa.Format.encode(resp), new_turn_state}}
     else

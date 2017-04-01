@@ -231,7 +231,7 @@ defmodule Fennec.UDPTest do
 
   defp udp_communicate(udp, client_id, req) do
     with_mock Fennec.Auth, [:passthrough], [
-      maybe: fn(_, p, _) -> {:ok, p} end
+      maybe: fn(_, p, _, _) -> {:ok, p} end
     ] do
      :ok = udp_send(udp, client_id, req)
      udp_recv(udp, client_id)

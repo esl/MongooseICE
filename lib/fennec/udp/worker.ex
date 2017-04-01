@@ -19,10 +19,10 @@ defmodule Fennec.UDP.Worker do
 
 
   @type state :: %{socket: :gen_udp.socket,
+                   nonce_updated_at: integer,
                    client: Fennec.client_info,
                    server: Fennec.UDP.start_options,
-                   turn: TURN.t,
-                   nonce_updated_at: integer
+                   turn: TURN.t
                  }
 
   # Starts a UDP worker
@@ -46,11 +46,8 @@ defmodule Fennec.UDP.Worker do
   def init([dispatcher, server_opts, socket, ip, port]) do
     _ = Dispatcher.register_worker(dispatcher, self(), ip, port)
     client = %{ip: ip, port: port}
-    turn_state = %TURN{
-      realm: Keyword.get(server_opts, :realm, "localhost")
-    }
     {:ok, %{socket: socket, client: client, nonce_updated_at: 0,
-            server: server_opts, turn: turn_state}}
+            server: server_opts, turn: %TURN{}}}
   end
 
   def handle_cast({:process_data, data}, state) do
