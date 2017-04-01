@@ -6,7 +6,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
   alias Fennec.TURN
   @lifetime 10 * 60
 
-  @spec service(Params.t, map, TURN.t) :: {Params.t, TURN.t}
+  @spec service(Params.t, Fennec.client_info, TURN.t) :: {Params.t, TURN.t}
   def service(params, client, turn_state) do
     request_status =
       {:continue, params, %{}}
@@ -23,7 +23,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
     end
   end
 
-  defp allocation_params(params, %{address: a, port: p},
+  defp allocation_params(params, %{ip: a, port: p},
                          turn_state = %TURN{allocation: allocation}) do
     addr = Application.get_env(:fennec, :relay_addr, {127, 0, 0, 1})
     %TURN.Allocation{socket: socket, expire_at: expire_at} = allocation

@@ -4,7 +4,8 @@ defmodule Fennec.Evaluator do
   alias Jerboa.Params
   alias Fennec.TURN
 
-  @spec service(Params.t, map, TURN.t) :: {Params.t, TURN.t} | :void
+  @spec service(Params.t, Fennec.client_info, TURN.t)
+    :: {Params.t, TURN.t} | :void
   def service(p, client, turn_state) do
     case class(p) do
       :request ->

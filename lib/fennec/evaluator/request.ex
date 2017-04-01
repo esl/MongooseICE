@@ -5,7 +5,7 @@ defmodule Fennec.Evaluator.Request do
   alias Jerboa.Format.Body.Attribute
   alias Fennec.TURN
 
-  @spec service(Params.t, map, TURN.t) :: {Params.t, TURN.t}
+  @spec service(Params.t, Fennec.client_info, TURN.t) :: {Params.t, TURN.t}
   def service(params, client, turn_state) do
     case service_(params, client, turn_state) do
       {new_params, new_turn_state} ->
