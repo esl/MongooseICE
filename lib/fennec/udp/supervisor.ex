@@ -11,8 +11,8 @@ defmodule Fennec.UDP.Supervisor do
 
     children = [
       supervisor(Fennec.UDP.Dispatcher, [base_name]),
-      supervisor(Fennec.UDP.WorkerSupervisor, [base_name]),
-      worker(Fennec.UDP.Receiver, [opts, base_name])
+      supervisor(Fennec.UDP.WorkerSupervisor, [base_name, opts]),
+      worker(Fennec.UDP.Receiver, [base_name, opts])
     ]
 
     opts = [strategy: :one_for_all, name: name]

@@ -25,23 +25,25 @@ defmodule Fennec.UDP do
   passed as a keyword list:
   * `:port` - the port which server should be bound to
   * `:ip` - the address of an interface which server should listen on
+  * `:relay_ip` - the address of an interface which relay should listen on
 
   You may start multiple UDP servers at a time.
   """
 
   @type socket :: :gen_udp.socket
-  @type start_options :: [option]
-  @type option :: {:ip, Fennec.ip} | {:port, Fennec.portn}
+  @type server_opts :: [option]
+  @type option :: {:ip, Fennec.ip} | {:port, Fennec.portn} |
+                  {:relay_ip, Fennec.ip}
 
-  @default_opts [ip: {127, 0, 0, 1}, port: 3478]
-  @allowed_opts [:ip, :port]
+  @default_opts [ip: {127, 0, 0, 1}, port: 3478, relay_ip: {127, 0, 0, 1}]
+  @allowed_opts [:ip, :port, :relay_ip]
 
   @doc """
   Starts UDP STUN server under Fennec's supervisor
 
   Accepts the same options as `start_link/1`.
   """
-  @spec start(start_options) :: Supervisor.on_start_child
+  @spec start(server_opts) :: Supervisor.on_start_child
   def start(opts) do
     opts = normalize_opts(opts)
     name = base_name(opts[:port])
@@ -73,7 +75,7 @@ defmodule Fennec.UDP do
 
   Links the server to the calling process.
   """
-  @spec start_link(start_options) :: Supervisor.on_start
+  @spec start_link(server_opts) :: Supervisor.on_start
   def start_link(opts) do
     opts = normalize_opts(opts)
     Fennec.UDP.Supervisor.start_link(opts)

@@ -186,7 +186,8 @@ defmodule Fennec.UDPTest do
   defp udp_connect(server_address, server_port, client_address, client_port,
                    client_count) do
     Application.put_env(:fennec, :relay_addr, server_address)
-    Fennec.UDP.start_link(ip: server_address, port: server_port)
+    Fennec.UDP.start_link(ip: server_address, port: server_port,
+                          relay_ip: server_address)
 
     sockets =
       for i <- 1..client_count do

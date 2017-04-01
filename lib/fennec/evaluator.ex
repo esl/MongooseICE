@@ -4,14 +4,14 @@ defmodule Fennec.Evaluator do
   alias Jerboa.Params
   alias Fennec.TURN
 
-  @spec service(Params.t, Fennec.client_info, TURN.t)
+  @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
     :: {Params.t, TURN.t} | :void
-  def service(p, client, turn_state) do
+  def service(p, client, server, turn_state) do
     case class(p) do
       :request ->
-        Fennec.Evaluator.Request.service(p, client, turn_state)
+        Fennec.Evaluator.Request.service(p, client, server, turn_state)
       :indication ->
-        Fennec.Evaluator.Indication.service(p, client, turn_state)
+        Fennec.Evaluator.Indication.service(p, client, server, turn_state)
     end
   end
 

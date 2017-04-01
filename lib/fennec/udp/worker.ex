@@ -8,6 +8,7 @@ defmodule Fennec.UDP.Worker do
 
   alias Fennec.UDP
   alias Fennec.TURN
+  alias Fennec.STUN
   alias Fennec.UDP.{WorkerSupervisor, Dispatcher}
 
   use GenServer
@@ -19,6 +20,7 @@ defmodule Fennec.UDP.Worker do
 
   @type state :: %{socket: :gen_udp.socket,
                    client: Fennec.client_info,
+                   server: Fennec.UDP.start_options,
                    turn: TURN.t
                  }
 
@@ -34,21 +36,21 @@ defmodule Fennec.UDP.Worker do
     GenServer.cast(pid, {:process_data, data})
   end
 
-  def start_link(dispatcher, socket, ip, port) do
-    GenServer.start_link(__MODULE__, [dispatcher, socket, ip, port])
+  def start_link(dispatcher, server_opts, socket, ip, port) do
+    GenServer.start_link(__MODULE__, [dispatcher, server_opts, socket, ip, port])
   end
 
   ## GenServer callbacks
 
-  def init([dispatcher, socket, ip, port]) do
+  def init([dispatcher, server_opts, socket, ip, port]) do
     _ = Dispatcher.register_worker(dispatcher, self(), ip, port)
     client = %{ip: ip, port: port}
-    {:ok, %{socket: socket, client: client, turn: %TURN{}}}
+    {:ok, %{socket: socket, client: client, server: server_opts, turn: %TURN{}}}
   end
 
   def handle_cast({:process_data, data}, state) do
     next_state =
-      case Fennec.STUN.process_message(data, state.client, state.turn) do
+      case STUN.process_message(data, state.client, state.server, state.turn) do
         {:ok, :void} ->
           state
         {:ok, {resp, new_turn_state}} ->

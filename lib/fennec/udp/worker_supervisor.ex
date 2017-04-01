@@ -4,14 +4,14 @@ defmodule Fennec.UDP.WorkerSupervisor do
 
   alias Fennec.UDP
 
-  def start_link(base_name) do
+  def start_link(base_name, server_opts) do
     import Supervisor.Spec, warn: false
 
     name = UDP.worker_sup_name(base_name)
     dispatcher = UDP.dispatcher_name(base_name)
 
     children = [
-      worker(Fennec.UDP.Worker, [dispatcher], restart: :temporary)
+      worker(Fennec.UDP.Worker, [dispatcher, server_opts], restart: :temporary)
     ]
 
     opts = [strategy: :simple_one_for_one, name: name]

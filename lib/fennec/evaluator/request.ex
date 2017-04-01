@@ -5,9 +5,10 @@ defmodule Fennec.Evaluator.Request do
   alias Jerboa.Format.Body.Attribute
   alias Fennec.TURN
 
-  @spec service(Params.t, Fennec.client_info, TURN.t) :: {Params.t, TURN.t}
-  def service(params, client, turn_state) do
-    case service_(params, client, turn_state) do
+  @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
+    :: {Params.t, TURN.t}
+  def service(params, client, server, turn_state) do
+    case service_(params, client, server, turn_state) do
       {new_params, new_turn_state} ->
         {response(new_params), new_turn_state}
       new_params ->
@@ -15,12 +16,12 @@ defmodule Fennec.Evaluator.Request do
     end
   end
 
-  defp service_(p, client, turn_state) do
+  defp service_(p, client, server, turn_state) do
     case method(p) do
       :binding ->
-        Fennec.Evaluator.Binding.Request.service(p, client, turn_state)
+        Fennec.Evaluator.Binding.Request.service(p, client, server, turn_state)
       :allocate ->
-        Fennec.Evaluator.Allocate.Request.service(p, client, turn_state)
+        Fennec.Evaluator.Allocate.Request.service(p, client, server, turn_state)
     end
   end
 

@@ -6,14 +6,15 @@ defmodule Fennec.Evaluator.Allocate.Request do
   alias Fennec.TURN
   @lifetime 10 * 60
 
-  @spec service(Params.t, Fennec.client_info, TURN.t) :: {Params.t, TURN.t}
-  def service(params, client, turn_state) do
+  @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
+    :: {Params.t, TURN.t}
+  def service(params, client, server, turn_state) do
     request_status =
       {:continue, params, %{}}
-      |> maybe(&verify_existing_allocation/4, [client, turn_state])
+      |> maybe(&verify_existing_allocation/5, [client, server, turn_state])
       |> maybe(&verify_requested_transport/2)
       |> maybe(&verify_unknown_attributes/2)
-      |> maybe(&allocate/4, [client, turn_state])
+      |> maybe(&allocate/5, [client, server, turn_state])
 
     case request_status do
       {:error, error_code} ->
@@ -23,11 +24,11 @@ defmodule Fennec.Evaluator.Allocate.Request do
     end
   end
 
-  defp allocation_params(params, %{ip: a, port: p},
+  defp allocation_params(params, %{ip: a, port: p}, server,
                          turn_state = %TURN{allocation: allocation}) do
-    addr = Application.get_env(:fennec, :relay_addr, {127, 0, 0, 1})
     %TURN.Allocation{socket: socket, expire_at: expire_at} = allocation
-    {:ok, port} = :inet.port(socket)
+    {:ok, {socket_addr, port}} = :inet.sockname(socket)
+    addr = server[:relay_ip] || socket_addr
     lifetime = max(0, expire_at - System.system_time(:second))
     attrs = [
       %Attribute.XORMappedAddress{
@@ -47,8 +48,8 @@ defmodule Fennec.Evaluator.Allocate.Request do
     {%{params | attributes: attrs}, turn_state}
   end
 
-  defp allocate(params, _state, client, turn_state) do
-    addr = Application.get_env(:fennec, :relay_addr, {127, 0, 0, 1})
+  defp allocate(params, _state, client, server, turn_state) do
+    addr = server[:relay_ip]
     {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
     allocation = %Fennec.TURN.Allocation{
       socket: socket,
@@ -57,14 +58,14 @@ defmodule Fennec.Evaluator.Allocate.Request do
     }
 
     new_turn_state = %{turn_state | allocation: allocation}
-    {:respond, allocation_params(params, client, new_turn_state)}
+    {:respond, allocation_params(params, client, server, new_turn_state)}
   end
 
-  defp verify_existing_allocation(params, state, client, turn_state) do
+  defp verify_existing_allocation(params, state, client, server, turn_state) do
     req_id = Params.get_id(params)
     case turn_state do
       %TURN{allocation: %TURN.Allocation{owner: ^req_id}} ->
-        {:respond, allocation_params(params, client, turn_state)}
+        {:respond, allocation_params(params, client, server, turn_state)}
       %TURN{allocation: %TURN.Allocation{}} ->
         {:error, %Attribute.ErrorCode{code: 437}}
       %TURN{allocation: nil} ->
