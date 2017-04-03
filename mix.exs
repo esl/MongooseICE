@@ -33,7 +33,7 @@ defmodule Fennec.Mixfile do
      {:dialyxir, "~> 0.4", runtime: false, only: :dev},
      {:excoveralls, "~> 0.5", runtime: false, only: :test},
      {:inch_ex, "~> 0.5", runtime: false, only: :dev},
-     {:jerboa, github: "esl/jerboa", tag: "simple-turn-client"}]
+     {:jerboa, github: "rslota/jerboa"}]
   end
 
   defp package do

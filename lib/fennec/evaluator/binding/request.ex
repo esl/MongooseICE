@@ -2,6 +2,7 @@ defmodule Fennec.Evaluator.Binding.Request do
   @moduledoc false
 
   alias Jerboa.Format
+  alias Jerboa.Params
   alias Fennec.TURN
 
   @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
