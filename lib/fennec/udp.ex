@@ -26,7 +26,8 @@ defmodule Fennec.UDP do
   * `:port` - the port which server should be bound to
   * `:ip` - the address of an interface which server should listen on
   * `:relay_ip` - the address of an interface which relay should listen on
-  * `:realm` - public name of the server used as context of authorization 
+  * `:realm` - public name of the server used as context of authorization.
+  Does not have to be same as the server's hostname, yet in very basic configuration it may be. 
 
   You may start multiple UDP servers at a time.
   """
