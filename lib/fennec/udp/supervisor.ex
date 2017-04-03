@@ -2,7 +2,7 @@ defmodule Fennec.UDP.Supervisor do
   @moduledoc false
   # Supervisor of UDP listener, dispatcher and workers
 
-  @spec start_link(Fennec.UDP.options) :: Supervisor.on_start
+  @spec start_link(Fennec.UDP.server_opts) :: Supervisor.on_start
   def start_link(opts) do
     import Supervisor.Spec, warn: false
 
