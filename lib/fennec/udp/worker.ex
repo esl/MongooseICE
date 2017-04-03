@@ -7,16 +7,22 @@ defmodule Fennec.UDP.Worker do
   # it simply crashes.
 
   alias Fennec.UDP
+  alias Fennec.TURN
+  alias Fennec.STUN
   alias Fennec.UDP.{WorkerSupervisor, Dispatcher}
 
   use GenServer
+  require Logger
 
   # should be configurable
   @timeout 5_000
 
+
   @type state :: %{socket: :gen_udp.socket,
-                   ip: :inet.ip_address,
-                   port: :inet.port_number}
+                   client: Fennec.client_info,
+                   server: Fennec.UDP.start_options,
+                   turn: TURN.t
+                 }
 
   # Starts a UDP worker
   @spec start(atom, UDP.socket, Fennec.ip, Fennec.portn) :: {:ok, pid} | :error
@@ -30,28 +36,49 @@ defmodule Fennec.UDP.Worker do
     GenServer.cast(pid, {:process_data, data})
   end
 
-  def start_link(dispatcher, socket, ip, port) do
-    GenServer.start_link(__MODULE__, [dispatcher, socket, ip, port])
+  def start_link(dispatcher, server_opts, socket, ip, port) do
+    GenServer.start_link(__MODULE__, [dispatcher, server_opts, socket, ip, port])
   end
 
   ## GenServer callbacks
 
-  def init([dispatcher, socket, ip, port]) do
+  def init([dispatcher, server_opts, socket, ip, port]) do
     _ = Dispatcher.register_worker(dispatcher, self(), ip, port)
-    {:ok, %{socket: socket, ip: ip, port: port}}
+    client = %{ip: ip, port: port}
+    {:ok, %{socket: socket, client: client, server: server_opts, turn: %TURN{}}}
   end
 
   def handle_cast({:process_data, data}, state) do
-    case Fennec.STUN.process_message!(data, state.ip, state.port) do
-      :void ->
-        :ok
-      resp ->
-        :ok = :gen_udp.send(state.socket, state.ip, state.port, resp)
-    end
-    {:noreply, state, @timeout}
+    next_state =
+      case STUN.process_message(data, state.client, state.server, state.turn) do
+        {:ok, :void} ->
+          state
+        {:ok, {resp, new_turn_state}} ->
+          :ok = :gen_udp.send(state.socket, state.client.ip,
+                              state.client.port, resp)
+          %{state | turn: new_turn_state}
+      end
+    {:noreply, next_state, timeout(next_state)}
+  end
+
+  def handle_info({:udp, socket, ip, port, data}, state = %{turn:
+                  %TURN{allocation: %TURN.Allocation{socket: socket}}}) do
+    _ = handle_peer_data(ip, port, data, state)
+    {:noreply, state}
   end
 
   def handle_info(:timeout, state) do
     {:stop, :normal, state}
+  end
+
+  defp handle_peer_data(ip, port, data, _state) do
+    Logger.debug(~s"Peer #{ip}:#{port} sent data: #{data}")
+  end
+
+  defp timeout(%{turn: %TURN{allocation: nil}}), do: @timeout
+  defp timeout(%{turn: %TURN{allocation: allocation}}) do
+    %TURN.Allocation{expire_at: expire_at} = allocation
+    now = System.system_time(:second)
+    max(0, expire_at - now)
   end
 end

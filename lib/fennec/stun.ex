@@ -2,16 +2,19 @@ defmodule Fennec.STUN do
   @moduledoc false
   # Processing of STUN messages
 
-  alias Jerboa.Params
+  alias Fennec.TURN
+  alias Fennec.Evaluator
+  alias Fennec.UDP
 
-  @spec process_message!(binary, Fennec.ip, Fennec.portn) :: binary | no_return
-  def process_message!(data, ip, port) do
-    {:ok, x = %Params{method: :binding}} = Jerboa.Format.decode(data)
-    case Fennec.Evaluator.service(x, %{address: ip, port: port}) do
+  @spec process_message(binary, Fennec.client_info, UDP.server_opts, TURN.t) ::
+    {:ok, {binary, %TURN{}}} | {:ok, :void}
+  def process_message(data, client, server, turn_state) do
+    with {:ok, params} <- Jerboa.Format.decode(data),
+         {resp, new_turn_state} <- Evaluator.service(params, client, server, turn_state) do
+      {:ok, {Jerboa.Format.encode(resp), new_turn_state}}
+    else
       :void ->
-        :void
-      y when is_map(y) ->
-        Jerboa.Format.encode(y)
+        {:ok, :void}
     end
   end
 end

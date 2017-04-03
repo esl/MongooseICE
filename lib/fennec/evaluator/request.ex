@@ -2,45 +2,55 @@ defmodule Fennec.Evaluator.Request do
   @moduledoc false
 
   alias Jerboa.Params
+  alias Jerboa.Format.Body.Attribute
+  alias Fennec.TURN
 
-  @spec service(Params.t, map) :: Params.t
-  def service(parameters, changes) do
-    parameters
-    |> service_(changes)
-    |> response
+  @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
+    :: {Params.t, TURN.t}
+  def service(params, client, server, turn_state) do
+    case service_(params, client, server, turn_state) do
+      {new_params, new_turn_state} ->
+        {response(new_params), new_turn_state}
+      new_params ->
+        {response(new_params), turn_state}
+    end
   end
 
-  def service_(p, changes) do
+  defp service_(p, client, server, turn_state) do
     case method(p) do
       :binding ->
-        Fennec.Evaluator.Binding.Request.service(p, changes)
-      _ ->
-        :error
+        Fennec.Evaluator.Binding.Request.service(p, client, server, turn_state)
+      :allocate ->
+        Fennec.Evaluator.Allocate.Request.service(p, client, server, turn_state)
     end
   end
 
-  defp method(x) do
-    Params.get_method(x)
+  defp method(params) do
+    Params.get_method(params)
   end
 
-  defp response(x) do
-    case errors?(x) do
+  defp response(result) do
+    case errors?(result) do
       false ->
-        success(x)
+        success(result)
       true ->
-        failure(x)
+        failure(result)
     end
   end
 
-  defp errors?(%Params{attributes: _}) do
-    false
+  defp errors?(%Params{attributes: attrs}) do
+     attrs
+     |> Enum.any?(&error_attr?/1)
   end
 
-  defp success(x) do
-    Params.put_class(x, :success)
+  defp success(params) do
+    Params.put_class(params, :success)
   end
 
-  defp failure(x) do
-    Params.put_class(x, :failure)
+  defp failure(params) do
+    Params.put_class(params, :failure)
   end
+
+  defp error_attr?(%Attribute.ErrorCode{}), do: true
+  defp error_attr?(_), do: false
 end
