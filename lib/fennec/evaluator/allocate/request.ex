@@ -13,7 +13,9 @@ defmodule Fennec.Evaluator.Allocate.Request do
       {:continue, params, %{}}
       |> maybe(&verify_existing_allocation/5, [client, server, turn_state])
       |> maybe(&verify_requested_transport/2)
-      |> maybe(&verify_unknown_attributes/2)
+      |> maybe(&verify_dont_fragment/2)
+      |> maybe(&verify_reservation_token/2)
+      |> maybe(&verify_even_port/2)
       |> maybe(&allocate/5, [client, server, turn_state])
 
     case request_status do
@@ -84,15 +86,37 @@ defmodule Fennec.Evaluator.Allocate.Request do
       end
   end
 
-  defp verify_unknown_attributes(params, state) do
-    with u  <- Params.get_attr(params, Attribute.Username),
-         r  <- Params.get_attr(params, Attribute.Realm),
-         [] <- Params.get_attrs(params) -- [u, r] do
-      {:continue, params, state}
-    else
+  defp verify_dont_fragment(params, state) do
+    case Params.get_attr(params, Attribute.DontFragment) do
+      %Attribute.DontFragment{} ->
+        {:error, %Attribute.ErrorCode{code: 420}} # Currently unsupported
       _ ->
-        {:error, %Attribute.ErrorCode{code: 420}}
-    end
+        {:continue, params, state}
+      end
+  end
+
+  defp verify_reservation_token(params, state) do
+    even_port = Params.get_attr(params, Attribute.EvenPort)
+    case Params.get_attr(params, Attribute.ReservationToken) do
+      %Attribute.ReservationToken{} when even_port != nil ->
+        {:error, %Attribute.ErrorCode{code: 400}}
+      %Attribute.ReservationToken{} ->
+        {:error, %Attribute.ErrorCode{code: 420}} # Currently unsupported
+      _ ->
+        {:continue, params, state}
+      end
+  end
+
+  defp verify_even_port(params, state) do
+    reservation_token = Params.get_attr(params, Attribute.ReservationToken)
+    case Params.get_attr(params, Attribute.EvenPort) do
+      %Attribute.EvenPort{} when reservation_token != nil ->
+        {:error, %Attribute.ErrorCode{code: 400}}
+      %Attribute.EvenPort{} ->
+        {:error, %Attribute.ErrorCode{code: 420}} # Currently unsupported
+      _ ->
+        {:continue, params, state}
+      end
   end
 
   defp maybe(result, check), do: maybe(result, check, [])

@@ -5,7 +5,8 @@ defmodule Fennec.UDPTest do
   alias Jerboa.Format
   alias Jerboa.Format.Body.Attribute.{XORMappedAddress, Lifetime,
                                       XORRelayedAddress, ErrorCode,
-                                      RequestedTransport}
+                                      RequestedTransport, EvenPort,
+                                      ReservationToken}
 
   import Mock
 
@@ -78,7 +79,7 @@ defmodule Fennec.UDPTest do
       id = :crypto.strong_rand_bytes(12)
       req = allocate_request(id, [
         %RequestedTransport{protocol: :udp},
-        %Lifetime{duration: 5}
+        %EvenPort{}
       ])
 
       resp = udp_communicate(udp, 0, req)
@@ -90,6 +91,26 @@ defmodule Fennec.UDPTest do
                      attributes: [error]} = params
 
       assert %ErrorCode{code: 420} = error
+    end
+
+    test "fails if EvenPort and ReservationToken are supplied", ctx do
+      udp = ctx.udp
+      id = :crypto.strong_rand_bytes(12)
+      req = allocate_request(id, [
+        %RequestedTransport{protocol: :udp},
+        %EvenPort{},
+        %ReservationToken{value: "12345678"}
+      ])
+
+      resp = udp_communicate(udp, 0, req)
+
+      params = Format.decode!(resp)
+      assert %Params{class: :failure,
+                     method: :allocate,
+                     identifier: ^id,
+                     attributes: [error]} = params
+
+      assert %ErrorCode{code: 400} = error
     end
 
     test "returns response with IPv6 XOR relayed address attribute", ctx do
