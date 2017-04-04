@@ -42,13 +42,13 @@ defmodule Fennec.Auth do
     else
       false -> # Not verified -> error code 401
         {:error, error_params(401, params, server, turn_state)}
-      _ when signed? -> # If message is signed and there are some attributes
-                        # missing, we need to respond with error code 400
-        {:error, error_params(400, params, server, turn_state)}
       %Nonce{} -> # Invalid nonce, error code 438
         {:error, error_params(438, params, server, turn_state)}
       nil when not signed? ->
         {:error, error_params(401, params, server, turn_state)}
+      _ when signed? -> # If message is signed and there are some attributes
+                        # missing, we need to respond with error code 400
+        {:error, error_params(400, params, server, turn_state)}
     end
   end
 
