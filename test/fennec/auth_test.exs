@@ -3,7 +3,7 @@ defmodule Fennec.AuthTest do
 
   alias Jerboa.Params
   alias Jerboa.Format
-  alias Jerboa.Format.Body.Attribute.{XORMappedAddress, Lifetime, Username,
+  alias Jerboa.Format.Body.Attribute.{Username,
                                       XORRelayedAddress, ErrorCode,
                                       RequestedTransport, Nonce, Realm}
 
@@ -145,6 +145,30 @@ defmodule Fennec.AuthTest do
     req =
       allocate_request(id, attrs)
       |> Format.encode(secret: "abcd")
+
+    resp = udp_communicate(udp, 0, req)
+
+    params = Format.decode!(resp)
+    assert %Params{class: :failure,
+                   method: :allocate,
+                   identifier: ^id} = params
+
+    assert %ErrorCode{code: 401} = Params.get_attr(params, ErrorCode)
+  end
+
+  test "request with no secret fails to authenticate", ctx do
+    udp = ctx.udp
+    nonce_attr = get_nonce(udp)
+    id = :crypto.strong_rand_bytes(12)
+    attrs = [
+      %RequestedTransport{protocol: :udp},
+      %Username{value: "user"},
+      %Realm{value: "localhost"},
+      nonce_attr
+    ]
+    req =
+      allocate_request(id, attrs)
+      |> Format.encode()
 
     resp = udp_communicate(udp, 0, req)
 
