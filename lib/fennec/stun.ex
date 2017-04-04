@@ -11,7 +11,7 @@ defmodule Fennec.STUN do
   @spec process_message(binary, Fennec.client_info, UDP.server_opts, TURN.t) ::
     {:ok, {binary, %TURN{}}} | {:ok, :void}
   def process_message(data, client, server, turn_state) do
-    with secret        <- Auth.get_secret(),
+    with secret        =  Auth.get_secret(),
          {:ok, params} <- Jerboa.Format.decode(data, [secret: secret]),
          {:ok, params} <- Auth.maybe(&Auth.authenticate/3, params, server, turn_state),
          {:ok, params} <- Auth.maybe(&Auth.authorize/3, params, server, turn_state),

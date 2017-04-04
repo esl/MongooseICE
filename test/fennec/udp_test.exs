@@ -20,7 +20,7 @@ defmodule Fennec.UDPTest do
       client_port = 43_100
       client_address = {0, 0, 0, 0, 0, 0, 0, 1}
       Fennec.UDP.start_link(ip: server_address, port: server_port)
-      id = :crypto.strong_rand_bytes(12)
+      id = Params.generate_id()
       req = binding_request(id)
 
       {:ok, sock} = :gen_udp.open(client_port,
@@ -60,7 +60,7 @@ defmodule Fennec.UDPTest do
 
     test "fails without RequestedTransport attribute", ctx do
       udp = ctx.udp
-      id = :crypto.strong_rand_bytes(12)
+      id = Params.generate_id()
       req = allocate_request(id, [])
 
       resp = udp_communicate(udp, 0, req)
@@ -76,7 +76,7 @@ defmodule Fennec.UDPTest do
 
     test "fails with unknown attribute", ctx do
       udp = ctx.udp
-      id = :crypto.strong_rand_bytes(12)
+      id = Params.generate_id()
       req = allocate_request(id, [
         %RequestedTransport{protocol: :udp},
         %EvenPort{}
@@ -95,7 +95,7 @@ defmodule Fennec.UDPTest do
 
     test "fails if EvenPort and ReservationToken are supplied", ctx do
       udp = ctx.udp
-      id = :crypto.strong_rand_bytes(12)
+      id = Params.generate_id()
       req = allocate_request(id, [
         %RequestedTransport{protocol: :udp},
         %EvenPort{},
@@ -117,7 +117,7 @@ defmodule Fennec.UDPTest do
       udp = ctx.udp
       %{server_address: server_address, client_address: client_address} = udp
       client_port = client_port(udp, 0)
-      id = :crypto.strong_rand_bytes(12)
+      id = Params.generate_id()
       req = allocate_request(id)
 
       resp = udp_communicate(udp, 0, req)
@@ -143,8 +143,8 @@ defmodule Fennec.UDPTest do
 
     test "returns error after second allocation", ctx do
       udp = ctx.udp
-      id1 = :crypto.strong_rand_bytes(12)
-      id2 = :crypto.strong_rand_bytes(12)
+      id1 = Params.generate_id()
+      id2 = Params.generate_id()
       req1 = allocate_request(id1)
       req2 = allocate_request(id2)
 
@@ -161,7 +161,7 @@ defmodule Fennec.UDPTest do
 
     test "returns success after redundant allocation", ctx do
       udp = ctx.udp
-      id = :crypto.strong_rand_bytes(12)
+      id = Params.generate_id()
       req = allocate_request(id)
 
       _resp = udp_communicate(udp, 0, req)

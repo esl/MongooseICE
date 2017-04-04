@@ -7,9 +7,13 @@ defmodule Fennec.AuthTest do
                                       RequestedTransport, Nonce, Realm}
 
   @recv_timeout 5000
+  @max_value_bytes 763 - 1
+  @max_value_chars 128 - 1
+  @valid_secret "abc"
+  @invalid_secret "abcd"
 
   setup ctx do
-    Application.put_env(:fennec, :secret, "abc")
+    Application.put_env(:fennec, :secret, @valid_secret)
     test_case_id = ctx.line
     port_mod = test_case_id * 10
     udp =
@@ -24,7 +28,7 @@ defmodule Fennec.AuthTest do
 
   test "empty request returns nonce and realm", ctx do
     udp = ctx.udp
-    id = :crypto.strong_rand_bytes(12)
+    id = Params.generate_id()
     req =
       allocate_request(id)
       |> Format.encode()
@@ -41,20 +45,20 @@ defmodule Fennec.AuthTest do
     assert %Realm{value: realm} = Params.get_attr(params, Realm)
 
     assert String.length(nonce) > 0
-    assert String.length(nonce) < 128
-    assert byte_size(nonce) < 763
+    assert String.length(nonce) <= @max_value_chars
+    assert byte_size(nonce) <= @max_value_bytes
 
     assert String.length(realm) > 0
-    assert String.length(realm) < 128
-    assert byte_size(realm) < 763
+    assert String.length(realm) <= @max_value_chars
+    assert byte_size(realm) <= @max_value_bytes
   end
 
   test "request with all missing attributes fails to authenticate", ctx do
     udp = ctx.udp
-    id = :crypto.strong_rand_bytes(12)
+    id = Params.generate_id()
     req =
       allocate_request(id)
-      |> Format.encode(secret: "abc", realm: "realm", username: "user")
+      |> Format.encode(secret: @valid_secret, realm: "realm", username: "user")
 
     resp = udp_communicate(udp, 0, req)
 
@@ -68,7 +72,7 @@ defmodule Fennec.AuthTest do
 
   test "request with missing nonce attribute fails to authenticate", ctx do
     udp = ctx.udp
-    id = :crypto.strong_rand_bytes(12)
+    id = Params.generate_id()
     attrs = [
       %RequestedTransport{protocol: :udp},
       %Realm{value: "localhost"},
@@ -76,7 +80,7 @@ defmodule Fennec.AuthTest do
     ]
     req =
       allocate_request(id, attrs)
-      |> Format.encode(secret: "abc")
+      |> Format.encode(secret: @valid_secret)
 
     resp = udp_communicate(udp, 0, req)
 
@@ -90,7 +94,7 @@ defmodule Fennec.AuthTest do
 
   test "request with missing username attributes fails to authenticate", ctx do
     udp = ctx.udp
-    id = :crypto.strong_rand_bytes(12)
+    id = Params.generate_id()
     attrs = [
       %RequestedTransport{protocol: :udp},
       %Realm{value: "localhost"},
@@ -98,7 +102,7 @@ defmodule Fennec.AuthTest do
     ]
     req =
       allocate_request(id, attrs)
-      |> Format.encode(secret: "abc", username: "user")
+      |> Format.encode(secret: @valid_secret, username: "user")
 
     resp = udp_communicate(udp, 0, req)
 
@@ -112,14 +116,14 @@ defmodule Fennec.AuthTest do
 
   test "request with missing realm attributes fails to authenticate", ctx do
     udp = ctx.udp
-    id = :crypto.strong_rand_bytes(12)
+    id = Params.generate_id()
     attrs = [
       %RequestedTransport{protocol: :udp},
       %Username{value: "user"}
     ]
     req =
       allocate_request(id, attrs)
-      |> Format.encode(secret: "abc", realm: "localhost")
+      |> Format.encode(secret: @valid_secret, realm: "localhost")
 
     resp = udp_communicate(udp, 0, req)
 
@@ -134,7 +138,7 @@ defmodule Fennec.AuthTest do
   test "request with invalid secret fails to authenticate", ctx do
     udp = ctx.udp
     nonce_attr = get_nonce(udp)
-    id = :crypto.strong_rand_bytes(12)
+    id = Params.generate_id()
     attrs = [
       %RequestedTransport{protocol: :udp},
       %Username{value: "user"},
@@ -143,7 +147,7 @@ defmodule Fennec.AuthTest do
     ]
     req =
       allocate_request(id, attrs)
-      |> Format.encode(secret: "abcd")
+      |> Format.encode(secret: @invalid_secret)
 
     resp = udp_communicate(udp, 0, req)
 
@@ -155,10 +159,10 @@ defmodule Fennec.AuthTest do
     assert %ErrorCode{code: 401} = Params.get_attr(params, ErrorCode)
   end
 
-  test "request with no secret fails to authenticate", ctx do
+  test "request with no message integrity fails to authenticate", ctx do
     udp = ctx.udp
     nonce_attr = get_nonce(udp)
-    id = :crypto.strong_rand_bytes(12)
+    id = Params.generate_id()
     attrs = [
       %RequestedTransport{protocol: :udp},
       %Username{value: "user"},
@@ -181,7 +185,7 @@ defmodule Fennec.AuthTest do
 
   test "request with invalid nonce fails to authenticate", ctx do
     udp = ctx.udp
-    id = :crypto.strong_rand_bytes(12)
+    id = Params.generate_id()
     attrs = [
       %RequestedTransport{protocol: :udp},
       %Username{value: "user"},
@@ -190,7 +194,7 @@ defmodule Fennec.AuthTest do
     ]
     req =
       allocate_request(id, attrs)
-      |> Format.encode(secret: "abc")
+      |> Format.encode(secret: @valid_secret)
 
     resp = udp_communicate(udp, 0, req)
 
@@ -204,17 +208,17 @@ defmodule Fennec.AuthTest do
     assert %Realm{value: realm} = Params.get_attr(params, Realm)
 
     assert String.length(nonce) > 0
-    assert String.length(nonce) < 128
-    assert byte_size(nonce) < 763
+    assert String.length(nonce) <= @max_value_chars
+    assert byte_size(nonce) <= @max_value_bytes
 
     assert String.length(realm) > 0
-    assert String.length(realm) < 128
-    assert byte_size(realm) < 763
+    assert String.length(realm) <= @max_value_chars
+    assert byte_size(realm) <= @max_value_bytes
   end
 
   test "request with valid nonce authenticate successfully", ctx do
     udp = ctx.udp
-    id = :crypto.strong_rand_bytes(12)
+    id = Params.generate_id()
     nonce_attr = get_nonce(udp)
     attrs = [
       %RequestedTransport{protocol: :udp},
@@ -224,7 +228,7 @@ defmodule Fennec.AuthTest do
     ]
     req =
       allocate_request(id, attrs)
-      |> Format.encode(secret: "abc")
+      |> Format.encode(secret: @valid_secret)
 
     resp = udp_communicate(udp, 0, req)
 
@@ -293,7 +297,7 @@ defmodule Fennec.AuthTest do
   end
 
   defp get_nonce(udp) do
-    id = :crypto.strong_rand_bytes(12)
+    id = Params.generate_id()
     req =
       allocate_request(id)
       |> Format.encode()
