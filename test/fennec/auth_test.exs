@@ -3,8 +3,7 @@ defmodule Fennec.AuthTest do
 
   alias Jerboa.Params
   alias Jerboa.Format
-  alias Jerboa.Format.Body.Attribute.{Username,
-                                      XORRelayedAddress, ErrorCode,
+  alias Jerboa.Format.Body.Attribute.{Username, ErrorCode,
                                       RequestedTransport, Nonce, Realm}
 
   @recv_timeout 5000
@@ -300,9 +299,5 @@ defmodule Fennec.AuthTest do
       |> Format.encode()
     resp = udp_communicate(udp, 0, req)
     Params.get_attr(Format.decode!(resp), Nonce)
-  end
-
-  defp client_port(udp, client_id) do
-     udp.client_port_base + client_id + 1
   end
 end
