@@ -18,10 +18,10 @@ defmodule Fennec.UDP.Worker do
   @timeout 5_000
 
 
-  @type state :: %{socket: :gen_udp.socket,
+  @type state :: %{socket: UDP.socket,
                    nonce_updated_at: integer,
                    client: Fennec.client_info,
-                   server: Fennec.UDP.start_options,
+                   server: UDP.server_opts,
                    turn: TURN.t
                  }
 
