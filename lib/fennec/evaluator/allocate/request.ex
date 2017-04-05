@@ -56,7 +56,8 @@ defmodule Fennec.Evaluator.Allocate.Request do
     allocation = %Fennec.TURN.Allocation{
       socket: socket,
       expire_at: System.system_time(:second) + @lifetime,
-      owner: Params.get_id(params)
+      req_id: Params.get_id(params),
+      owner_username: Params.get_attr(params, Username)
     }
 
     new_turn_state = %{turn_state | allocation: allocation}
@@ -66,7 +67,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
   defp verify_existing_allocation(params, state, client, server, turn_state) do
     req_id = Params.get_id(params)
     case turn_state do
-      %TURN{allocation: %TURN.Allocation{owner: ^req_id}} ->
+      %TURN{allocation: %TURN.Allocation{req_id: ^req_id}} ->
         {:respond, allocation_params(params, client, server, turn_state)}
       %TURN{allocation: %TURN.Allocation{}} ->
         {:error, %Attribute.ErrorCode{code: 437}}

@@ -3,11 +3,12 @@ defmodule Fennec.TURN.Allocation do
   # This module defines a struct that is used to represent active TURN allocation
   # made by a client.
 
-  defstruct socket: nil, owner: nil, expire_at: 0
+  defstruct socket: nil, owner_username: nil, req_id: nil, expire_at: 0
 
   @type t :: %__MODULE__{
     socket: :gen_udp.socket,
-    owner: binary,
+    req_id: binary,
+    owner_username: binary,
     expire_at: integer # system time in seconds
   }
 end
