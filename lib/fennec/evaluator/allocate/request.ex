@@ -1,6 +1,7 @@
 defmodule Fennec.Evaluator.Allocate.Request do
   @moduledoc false
 
+  import Fennec.Evaluator.Helper
   alias Jerboa.Format.Body.Attribute
   alias Jerboa.Params
   alias Fennec.TURN
@@ -57,7 +58,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
       socket: socket,
       expire_at: System.system_time(:second) + @lifetime,
       req_id: Params.get_id(params),
-      owner_username: Params.get_attr(params, Username)
+      owner_username: owner_username(params)
     }
 
     new_turn_state = %{turn_state | allocation: allocation}
@@ -120,15 +121,13 @@ defmodule Fennec.Evaluator.Allocate.Request do
       end
   end
 
-  defp maybe(result, check), do: maybe(result, check, [])
-
-  defp maybe({:continue, params, state}, check, args) do
-    apply(check, [params, state | args])
+  defp owner_username(params) do
+    case Params.get_attr(params, Attribute.Username) do
+      %Attribute.Username{value: owner_username} ->
+        owner_username
+      _ ->
+        nil
+    end
   end
-  defp maybe({:respond, resp}, _check, _args), do: {:respond, resp}
-  defp maybe({:error, error_code}, _check, _x), do: {:error, error_code}
-
-  defp family(addr) when tuple_size(addr) == 4, do: :ipv4
-  defp family(addr) when tuple_size(addr) == 8, do: :ipv6
 
 end

@@ -1,6 +1,7 @@
 defmodule Fennec.Evaluator.Binding.Request do
   @moduledoc false
 
+  import Fennec.Evaluator.Helper
   alias Jerboa.Format
   alias Jerboa.Params
   alias Fennec.TURN
@@ -18,8 +19,5 @@ defmodule Fennec.Evaluator.Binding.Request do
       port: p
     }
   end
-
-  defp family(addr) when tuple_size(addr) == 4, do: :ipv4
-  defp family(addr) when tuple_size(addr) == 8, do: :ipv6
 
 end

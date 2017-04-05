@@ -6,6 +6,7 @@ defmodule Fennec.Auth do
   alias Jerboa.Format.Body.Attribute
   alias Jerboa.Format.Body.Attribute.{Username, Nonce, Realm}
   alias Jerboa.Params
+  alias Fennec.TURN
 
   @nonce_bytes 48
   @nonce_lifetime_seconds 60 * 60 # 1h
@@ -25,9 +26,18 @@ defmodule Fennec.Auth do
     |> Integer.to_string(16)
   end
 
-  def authorize(params, _server, _turn_state) do
-    # Right now, any authenticated user will do
-    {:ok, params}
+  def authorize(params, server, turn_state) do
+    # All authorized requests must have matching username with one that
+    # created an allocation, if any
+    %Username{value: username} = Params.get_attr(params, Username)
+    case turn_state do
+      %TURN{allocation: %TURN.Allocation{owner_username: ^username}} ->
+        {:ok, params}
+      %TURN{allocation: nil} ->
+        {:ok, params}
+      _ ->
+        {:error, error_params(441, params, server, turn_state)}
+    end
   end
 
   def authenticate(params, server, turn_state) do
@@ -65,6 +75,7 @@ defmodule Fennec.Auth do
     should_authorize?(Params.get_class(params), Params.get_method(params))
   end
   defp should_authorize?(:request, :allocate), do: true
+  defp should_authorize?(:request, :create_permission), do: true
   defp should_authorize?(_, _), do: false
 
   defp error_params(code, params, server, turn_state) do
