@@ -1,12 +1,14 @@
 defmodule Fennec.UDPTest do
   use ExUnit.Case
 
+  import Helper.UDP
+
   alias Jerboa.Params
   alias Jerboa.Format
   alias Jerboa.Format.Body.Attribute.{XORMappedAddress, Lifetime,
                                       XORRelayedAddress, ErrorCode,
                                       RequestedTransport, EvenPort,
-                                      ReservationToken}
+                                      ReservationToken, XORPeerAddress}
 
   import Mock
 
@@ -176,7 +178,92 @@ defmodule Fennec.UDPTest do
     end
   end
 
+  describe "create_permission request" do
 
+    setup ctx do
+      test_case_id = ctx.line
+      port_mod = test_case_id * 10
+      udp =
+        udp_connect({0, 0, 0, 0, 0, 0, 0, 1}, 12_100 + port_mod,
+                    {0, 0, 0, 0, 0, 0, 0, 1}, 42_100 + port_mod, 1)
+      on_exit fn ->
+        udp_close(udp)
+      end
+
+      {:ok, [udp: udp]}
+    end
+
+    test "fails without XORPeerAddress attribute", ctx do
+      udp = ctx.udp
+      udp_allocate(udp)
+
+      id = Params.generate_id()
+      req = create_permissions_request(id, [])
+
+      resp = udp_communicate(udp, 0, req)
+
+      params = Format.decode!(resp)
+      assert %Params{class: :failure,
+                     method: :create_permission,
+                     identifier: ^id,
+                     attributes: [error]} = params
+
+      assert %ErrorCode{code: 400} = error
+    end
+
+    test "fails without active allocation", ctx do
+      udp = ctx.udp
+      id = Params.generate_id()
+      req = create_permissions_request(id, [])
+
+      resp = udp_communicate(udp, 0, req)
+
+      params = Format.decode!(resp)
+      assert %Params{class: :failure,
+                     method: :create_permission,
+                     identifier: ^id,
+                     attributes: [error]} = params
+
+      assert %ErrorCode{code: 437} = error
+    end
+
+    test "succeeds with one XORPeerAddress", ctx do
+      udp = ctx.udp
+      udp_allocate(udp)
+
+      id = Params.generate_id()
+      peers = peers([{{123,123,6,1}, 1234}])
+      req = create_permissions_request(id, peers)
+
+      resp = udp_communicate(udp, 0, req)
+
+      params = Format.decode!(resp)
+      assert %Params{class: :success,
+                     method: :create_permission,
+                     identifier: ^id} = params
+    end
+
+    test "succeeds with multiple XORPeerAddress", ctx do
+      udp = ctx.udp
+      udp_allocate(udp)
+
+      id = Params.generate_id()
+      peers = peers([
+        {{123,123,6,1}, 1231},
+        {{123,123,6,2}, 1232},
+        {{123,123,6,3}, 1233},
+      ])
+      req = create_permissions_request(id, peers)
+
+      resp = udp_communicate(udp, 0, req)
+
+      params = Format.decode!(resp)
+      assert %Params{class: :success,
+                     method: :create_permission,
+                     identifier: ^id} = params
+    end
+
+  end
 
   test "start/1 and stop/1 a UDP server linked to Fennec.Supervisor" do
     port = 23_232
@@ -186,80 +273,5 @@ defmodule Fennec.UDPTest do
       Supervisor.which_children(Fennec.Supervisor)
     assert :ok = Fennec.UDP.stop(port)
     assert [] = Supervisor.which_children(Fennec.Supervisor)
-  end
-
-  defp binding_request(id) do
-    %Params{class: :request, method: :binding, identifier: id} |> Format.encode()
-  end
-
-  defp binding_indication(id) do
-    %Params{class: :indication, method: :binding, identifier: id} |> Format.encode()
-  end
-
-  defp allocate_request(id) do
-    allocate_request(id, [%RequestedTransport{protocol: :udp}])
-  end
-
-  defp allocate_request(id, attrs) do
-    %Params{class: :request, method: :allocate, identifier: id,
-            attributes: attrs}
-    |> Format.encode()
-  end
-
-  defp udp_connect(server_address, server_port, client_address, client_port,
-                   client_count) do
-    Application.put_env(:fennec, :relay_addr, server_address)
-    Fennec.UDP.start_link(ip: server_address, port: server_port,
-                          relay_ip: server_address)
-
-    sockets =
-      for i <- 1..client_count do
-        {:ok, sock} =
-          :gen_udp.open(client_port + i,
-                        [:binary, active: false, ip: client_address])
-          sock
-      end
-
-    %{
-      server_address: server_address,
-      server_port: server_port,
-      client_address: client_address,
-      client_port_base: client_port,
-      sockets: sockets
-    }
-  end
-
-  defp udp_close(%{sockets: sockets}) do
-    for sock <- sockets do
-      :gen_udp.close(sock)
-    end
-  end
-
-  defp udp_send(udp, client_id, req) do
-    sock = Enum.at(udp.sockets, client_id)
-    :ok = :gen_udp.send(sock, udp.server_address, udp.server_port, req)
-  end
-
-  defp udp_recv(udp, client_id) do
-    %{server_address: server_address, server_port: server_port} = udp
-    {sock, _} = List.pop_at(udp.sockets, client_id)
-    assert {:ok,
-            {^server_address,
-             ^server_port,
-             resp}} = :gen_udp.recv(sock, 0, @recv_timeout)
-    resp
-  end
-
-  defp udp_communicate(udp, client_id, req) do
-    with_mock Fennec.Auth, [:passthrough], [
-      maybe: fn(_, p, _, _) -> {:ok, p} end
-    ] do
-     :ok = udp_send(udp, client_id, req)
-     udp_recv(udp, client_id)
-   end
-  end
-
-  defp client_port(udp, client_id) do
-     udp.client_port_base + client_id + 1
   end
 end

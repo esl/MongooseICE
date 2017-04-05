@@ -1,12 +1,17 @@
 defmodule Fennec.AuthTest do
   use ExUnit.Case
 
+  # We need to override udp_communicate/3 since default implementation in
+  # Helpers.UDP skips authentication and authorization
+  import Helper.UDP, except: [udp_communicate: 3]
+
   alias Jerboa.Params
   alias Jerboa.Format
   alias Jerboa.Format.Body.Attribute.{Username, ErrorCode,
                                       RequestedTransport, Nonce, Realm}
 
-  @recv_timeout 5000
+
+
   @max_value_bytes 763 - 1
   @max_value_chars 128 - 1
   @valid_secret "abc"
@@ -30,7 +35,7 @@ defmodule Fennec.AuthTest do
     udp = ctx.udp
     id = Params.generate_id()
     req =
-      allocate_request(id)
+      allocate_params(id, [%RequestedTransport{protocol: :udp}])
       |> Format.encode()
 
     resp = udp_communicate(udp, 0, req)
@@ -57,7 +62,7 @@ defmodule Fennec.AuthTest do
     udp = ctx.udp
     id = Params.generate_id()
     req =
-      allocate_request(id)
+      allocate_params(id, [%RequestedTransport{protocol: :udp}])
       |> Format.encode(secret: @valid_secret, realm: "realm", username: "user")
 
     resp = udp_communicate(udp, 0, req)
@@ -79,7 +84,7 @@ defmodule Fennec.AuthTest do
       %Username{value: "user"}
     ]
     req =
-      allocate_request(id, attrs)
+      allocate_params(id, attrs)
       |> Format.encode(secret: @valid_secret)
 
     resp = udp_communicate(udp, 0, req)
@@ -101,7 +106,7 @@ defmodule Fennec.AuthTest do
       %Nonce{value: "nonce"}
     ]
     req =
-      allocate_request(id, attrs)
+      allocate_params(id, attrs)
       |> Format.encode(secret: @valid_secret, username: "user")
 
     resp = udp_communicate(udp, 0, req)
@@ -122,7 +127,7 @@ defmodule Fennec.AuthTest do
       %Username{value: "user"}
     ]
     req =
-      allocate_request(id, attrs)
+      allocate_params(id, attrs)
       |> Format.encode(secret: @valid_secret, realm: "localhost")
 
     resp = udp_communicate(udp, 0, req)
@@ -146,7 +151,7 @@ defmodule Fennec.AuthTest do
       nonce_attr
     ]
     req =
-      allocate_request(id, attrs)
+      allocate_params(id, attrs)
       |> Format.encode(secret: @invalid_secret)
 
     resp = udp_communicate(udp, 0, req)
@@ -170,7 +175,7 @@ defmodule Fennec.AuthTest do
       nonce_attr
     ]
     req =
-      allocate_request(id, attrs)
+      allocate_params(id, attrs)
       |> Format.encode()
 
     resp = udp_communicate(udp, 0, req)
@@ -193,7 +198,7 @@ defmodule Fennec.AuthTest do
       %Nonce{value: "some_invalid_nonce...hopefully"}
     ]
     req =
-      allocate_request(id, attrs)
+      allocate_params(id, attrs)
       |> Format.encode(secret: @valid_secret)
 
     resp = udp_communicate(udp, 0, req)
@@ -227,7 +232,7 @@ defmodule Fennec.AuthTest do
       nonce_attr
     ]
     req =
-      allocate_request(id, attrs)
+      allocate_params(id, attrs)
       |> Format.encode(secret: @valid_secret)
 
     resp = udp_communicate(udp, 0, req)
@@ -238,69 +243,36 @@ defmodule Fennec.AuthTest do
                    identifier: ^id} = params
   end
 
-  defp allocate_request(id) do
-    allocate_request(id, [%RequestedTransport{protocol: :udp}])
+  test "request with differet username fails to authorize", ctx do
+    udp = ctx.udp
+    id = Params.generate_id()
+    nonce_attr = get_nonce(udp)
+    attrs = [
+      %RequestedTransport{protocol: :udp},
+      %Username{value: "user"},
+      %Realm{value: "localhost"},
+      nonce_attr
+    ]
+    req =
+      allocate_params(id, attrs)
+      |> Format.encode(secret: @valid_secret)
+
+    resp = udp_communicate(udp, 0, req)
+
+    params = Format.decode!(resp)
+    assert %Params{class: :success,
+                   method: :allocate,
+                   identifier: ^id} = params
   end
 
-  defp allocate_request(id, attrs) do
-    %Params{class: :request, method: :allocate, identifier: id,
-            attributes: attrs}
-  end
-
-  defp udp_connect(server_address, server_port, client_address, client_port,
-                   client_count) do
-    Application.put_env(:fennec, :relay_addr, server_address)
-    Fennec.UDP.start_link(ip: server_address, port: server_port,
-                          relay_ip: server_address, realm: "localhost")
-
-    sockets =
-      for i <- 1..client_count do
-        {:ok, sock} =
-          :gen_udp.open(client_port + i,
-                        [:binary, active: false, ip: client_address])
-          sock
-      end
-
-    %{
-      server_address: server_address,
-      server_port: server_port,
-      client_address: client_address,
-      client_port_base: client_port,
-      sockets: sockets
-    }
-  end
-
-  defp udp_close(%{sockets: sockets}) do
-    for sock <- sockets do
-      :gen_udp.close(sock)
-    end
-  end
-
-  defp udp_send(udp, client_id, req) do
-    sock = Enum.at(udp.sockets, client_id)
-    :ok = :gen_udp.send(sock, udp.server_address, udp.server_port, req)
-  end
-
-  defp udp_recv(udp, client_id) do
-    %{server_address: server_address, server_port: server_port} = udp
-    {sock, _} = List.pop_at(udp.sockets, client_id)
-    assert {:ok,
-            {^server_address,
-             ^server_port,
-             resp}} = :gen_udp.recv(sock, 0, @recv_timeout)
-    resp
-  end
-
-  defp udp_communicate(udp, client_id, req) do
+  def udp_communicate(udp, client_id, req) do
     :ok = udp_send(udp, client_id, req)
     udp_recv(udp, client_id)
   end
 
   defp get_nonce(udp) do
     id = Params.generate_id()
-    req =
-      allocate_request(id)
-      |> Format.encode()
+    req = allocate_request(id)
     resp = udp_communicate(udp, 0, req)
     Params.get_attr(Format.decode!(resp), Nonce)
   end
