@@ -1,4 +1,4 @@
-defmodule Fennec.AuthTest do
+defmodule Fennec.UDP.AuthTest do
   use ExUnit.Case
 
   # We need to override udp_communicate/3 since default implementation in

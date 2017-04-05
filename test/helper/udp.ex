@@ -3,10 +3,8 @@ defmodule Helper.UDP do
 
   alias Jerboa.Params
   alias Jerboa.Format
-  alias Jerboa.Format.Body.Attribute.{XORMappedAddress, Lifetime,
-                                      XORRelayedAddress, ErrorCode,
-                                      RequestedTransport, EvenPort,
-                                      ReservationToken, XORPeerAddress}
+  alias Jerboa.Format.Body.Attribute.{Username, RequestedTransport,
+                                      XORPeerAddress}
 
   import Mock
 
@@ -34,9 +32,13 @@ defmodule Helper.UDP do
     end
   end
 
-  def create_permissions_request(id, attrs) do
+  def create_permission_params(id, attrs) do
     %Params{class: :request, method: :create_permission, identifier: id,
             attributes: attrs}
+  end
+
+  def create_permissions_request(id, attrs) do
+    create_permission_params(id, attrs)
     |> Format.encode()
   end
 
@@ -73,9 +75,12 @@ defmodule Helper.UDP do
     }
   end
 
-  def udp_allocate(udp) do
+  def udp_allocate(udp, username \\ "user") do
     id = Params.generate_id()
-    req = allocate_request(id)
+    req = allocate_request(id, [
+      %RequestedTransport{protocol: :udp},
+      %Username{value: username}
+    ])
     resp = udp_communicate(udp, 0, req)
     params = Format.decode!(resp)
     %Params{class: :success,
