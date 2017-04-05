@@ -121,7 +121,8 @@ defmodule Fennec.UDP.Worker do
   defp timeout(%{turn: %TURN{allocation: nil}}), do: @timeout
   defp timeout(%{turn: %TURN{allocation: allocation}}) do
     %TURN.Allocation{expire_at: expire_at} = allocation
-    now = Fennec.Helper.now
-    max(0, expire_at - now)
+    now = Fennec.Helper.now()
+    timeout_ms = (expire_at - now) * 1000
+    max(0, timeout_ms)
   end
 end
