@@ -26,6 +26,8 @@ defmodule Fennec.UDP do
   * `:port` - the port which server should be bound to
   * `:ip` - the address of an interface which server should listen on
   * `:relay_ip` - the address of an interface which relay should listen on
+  * `:realm` - public name of the server used as context of authorization.
+  Does not have to be same as the server's hostname, yet in very basic configuration it may be. 
 
   You may start multiple UDP servers at a time.
   """
@@ -33,10 +35,11 @@ defmodule Fennec.UDP do
   @type socket :: :gen_udp.socket
   @type server_opts :: [option]
   @type option :: {:ip, Fennec.ip} | {:port, Fennec.portn} |
-                  {:relay_ip, Fennec.ip}
+                  {:relay_ip, Fennec.ip} | {:realm, String.t}
 
-  @default_opts [ip: {127, 0, 0, 1}, port: 3478, relay_ip: {127, 0, 0, 1}]
-  @allowed_opts [:ip, :port, :relay_ip]
+  @default_opts [ip: {127, 0, 0, 1}, port: 3478, relay_ip: {127, 0, 0, 1},
+                 realm: "localhost"]
+  @allowed_opts [:ip, :port, :relay_ip, :realm]
 
   @doc """
   Starts UDP STUN server under Fennec's supervisor

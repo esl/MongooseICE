@@ -5,7 +5,10 @@ defmodule Fennec.UDPTest do
   alias Jerboa.Format
   alias Jerboa.Format.Body.Attribute.{XORMappedAddress, Lifetime,
                                       XORRelayedAddress, ErrorCode,
-                                      RequestedTransport}
+                                      RequestedTransport, EvenPort,
+                                      ReservationToken}
+
+  import Mock
 
   @recv_timeout 5000
 
@@ -17,7 +20,7 @@ defmodule Fennec.UDPTest do
       client_port = 43_100
       client_address = {0, 0, 0, 0, 0, 0, 0, 1}
       Fennec.UDP.start_link(ip: server_address, port: server_port)
-      id = :crypto.strong_rand_bytes(12)
+      id = Params.generate_id()
       req = binding_request(id)
 
       {:ok, sock} = :gen_udp.open(client_port,
@@ -57,7 +60,7 @@ defmodule Fennec.UDPTest do
 
     test "fails without RequestedTransport attribute", ctx do
       udp = ctx.udp
-      id = :crypto.strong_rand_bytes(12)
+      id = Params.generate_id()
       req = allocate_request(id, [])
 
       resp = udp_communicate(udp, 0, req)
@@ -73,10 +76,10 @@ defmodule Fennec.UDPTest do
 
     test "fails with unknown attribute", ctx do
       udp = ctx.udp
-      id = :crypto.strong_rand_bytes(12)
+      id = Params.generate_id()
       req = allocate_request(id, [
         %RequestedTransport{protocol: :udp},
-        %Lifetime{duration: 5}
+        %EvenPort{}
       ])
 
       resp = udp_communicate(udp, 0, req)
@@ -90,11 +93,31 @@ defmodule Fennec.UDPTest do
       assert %ErrorCode{code: 420} = error
     end
 
+    test "fails if EvenPort and ReservationToken are supplied", ctx do
+      udp = ctx.udp
+      id = Params.generate_id()
+      req = allocate_request(id, [
+        %RequestedTransport{protocol: :udp},
+        %EvenPort{},
+        %ReservationToken{value: "12345678"}
+      ])
+
+      resp = udp_communicate(udp, 0, req)
+
+      params = Format.decode!(resp)
+      assert %Params{class: :failure,
+                     method: :allocate,
+                     identifier: ^id,
+                     attributes: [error]} = params
+
+      assert %ErrorCode{code: 400} = error
+    end
+
     test "returns response with IPv6 XOR relayed address attribute", ctx do
       udp = ctx.udp
       %{server_address: server_address, client_address: client_address} = udp
       client_port = client_port(udp, 0)
-      id = :crypto.strong_rand_bytes(12)
+      id = Params.generate_id()
       req = allocate_request(id)
 
       resp = udp_communicate(udp, 0, req)
@@ -120,8 +143,8 @@ defmodule Fennec.UDPTest do
 
     test "returns error after second allocation", ctx do
       udp = ctx.udp
-      id1 = :crypto.strong_rand_bytes(12)
-      id2 = :crypto.strong_rand_bytes(12)
+      id1 = Params.generate_id()
+      id2 = Params.generate_id()
       req1 = allocate_request(id1)
       req2 = allocate_request(id2)
 
@@ -138,7 +161,7 @@ defmodule Fennec.UDPTest do
 
     test "returns success after redundant allocation", ctx do
       udp = ctx.udp
-      id = :crypto.strong_rand_bytes(12)
+      id = Params.generate_id()
       req = allocate_request(id)
 
       _resp = udp_communicate(udp, 0, req)
@@ -228,8 +251,12 @@ defmodule Fennec.UDPTest do
   end
 
   defp udp_communicate(udp, client_id, req) do
+    with_mock Fennec.Auth, [:passthrough], [
+      maybe: fn(_, p, _, _) -> {:ok, p} end
+    ] do
      :ok = udp_send(udp, client_id, req)
      udp_recv(udp, client_id)
+   end
   end
 
   defp client_port(udp, client_id) do
