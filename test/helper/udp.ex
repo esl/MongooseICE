@@ -11,6 +11,8 @@ defmodule Helper.UDP do
   @recv_timeout 5_000
   @default_user "user"
 
+  ## Requests definitions
+
   def binding_request(id) do
     %Params{class: :request, method: :binding, identifier: id} |> Format.encode()
   end
@@ -21,16 +23,6 @@ defmodule Helper.UDP do
 
   def allocate_request(id) do
     allocate_request(id, [%RequestedTransport{protocol: :udp}])
-  end
-
-  def peers(peers) do
-    for ip <- peers do
-      %XORPeerAddress{
-        address: ip,
-        port: 0,
-        family: Fennec.Evaluator.Helper.family(ip)
-      }
-    end
   end
 
   def create_permission_params(id, attrs) do
@@ -53,7 +45,46 @@ defmodule Helper.UDP do
     |> Format.encode()
   end
 
-  def udp_connect(server_address, server_port, client_address, client_port,
+  def peers(peers) do
+    for ip <- peers do
+      %XORPeerAddress{
+        address: ip,
+        port: 0,
+        family: Fennec.Evaluator.Helper.family(ip)
+      }
+    end
+  end
+
+  ## UDP Client
+
+  def allocate(udp, username \\ @default_user, client_id \\ 0) do
+    id = Params.generate_id()
+    req = allocate_request(id, [
+      %RequestedTransport{protocol: :udp},
+      %Username{value: username}
+    ])
+    resp = communicate(udp, client_id, req)
+    params = Format.decode!(resp)
+    %Params{class: :success,
+            method: :allocate,
+            identifier: ^id} = params
+  end
+
+  def create_permissions(udp, ips, username \\ @default_user, client_id \\ 0) do
+    id = Params.generate_id()
+    req = create_permission_request(id, peers(ips) ++ [
+      %Username{value: username}
+    ])
+    resp = communicate(udp, client_id, req)
+    params = Format.decode!(resp)
+    %Params{class: :success,
+            method: :create_permission,
+            identifier: ^id} = params
+  end
+
+  ## Communication
+
+  def connect(server_address, server_port, client_address, client_port,
                    client_count) do
     Application.put_env(:fennec, :relay_addr, server_address)
     Fennec.UDP.start_link(ip: server_address, port: server_port,
@@ -76,43 +107,18 @@ defmodule Helper.UDP do
     }
   end
 
-  def udp_allocate(udp, username \\ @default_user, client_id \\ 0) do
-    id = Params.generate_id()
-    req = allocate_request(id, [
-      %RequestedTransport{protocol: :udp},
-      %Username{value: username}
-    ])
-    resp = udp_communicate(udp, client_id, req)
-    params = Format.decode!(resp)
-    %Params{class: :success,
-            method: :allocate,
-            identifier: ^id} = params
-  end
-
-  def udp_create_permissions(udp, ips, username \\ @default_user, client_id \\ 0) do
-    id = Params.generate_id()
-    req = create_permission_request(id, peers(ips) ++ [
-      %Username{value: username}
-    ])
-    resp = udp_communicate(udp, client_id, req)
-    params = Format.decode!(resp)
-    %Params{class: :success,
-            method: :create_permission,
-            identifier: ^id} = params
-  end
-
-  def udp_close(%{sockets: sockets}) do
+  def close(%{sockets: sockets}) do
     for sock <- sockets do
       :gen_udp.close(sock)
     end
   end
 
-  def udp_send(udp, client_id, req) do
+  def send(udp, client_id, req) do
     sock = Enum.at(udp.sockets, client_id)
     :ok = :gen_udp.send(sock, udp.server_address, udp.server_port, req)
   end
 
-  def udp_recv(udp, client_id) do
+  def recv(udp, client_id) do
     %{server_address: server_address, server_port: server_port} = udp
     {sock, _} = List.pop_at(udp.sockets, client_id)
     {:ok, {^server_address,
@@ -121,12 +127,12 @@ defmodule Helper.UDP do
     resp
   end
 
-  def udp_communicate(udp, client_id, req) do
+  def communicate(udp, client_id, req) do
     with_mock Fennec.Auth, [:passthrough], [
       maybe: fn(_, p, _, _) -> {:ok, p} end
     ] do
-     :ok = udp_send(udp, client_id, req)
-     udp_recv(udp, client_id)
+     :ok = send(udp, client_id, req)
+     recv(udp, client_id)
    end
   end
 

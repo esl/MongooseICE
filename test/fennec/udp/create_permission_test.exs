@@ -1,9 +1,9 @@
 defmodule Fennec.UDP.CreatePermissionTest do
   use ExUnit.Case, async: false
   use Helper.Macros
-  import Helper.UDP
   import Mock
 
+  alias Helper.UDP
   alias Jerboa.Params
   alias Jerboa.Format
   alias Jerboa.Format.Body.Attribute.{ErrorCode, XORRelayedAddress}
@@ -13,10 +13,10 @@ defmodule Fennec.UDP.CreatePermissionTest do
     test_case_id = ctx.line
     port_mod = test_case_id * 10
     udp =
-      udp_connect({127, 0, 0, 1}, 12_100 + port_mod,
+      UDP.connect({127, 0, 0, 1}, 12_100 + port_mod,
                   {127, 0, 0, 1}, 42_100 + port_mod, 2)
     on_exit fn ->
-      udp_close(udp)
+      UDP.close(udp)
     end
 
     {:ok, [udp: udp]}
@@ -24,7 +24,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
 
   describe "worker's permissions state" do
     setup ctx do
-      udp_allocate(ctx.udp)
+      UDP.allocate(ctx.udp)
       {:ok, []}
     end
 
@@ -39,7 +39,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
       udp = ctx.udp
       worker = worker(udp, 0)
 
-      udp_create_permissions(udp, [{127, 0, 10, 0}])
+      UDP.create_permissions(udp, [{127, 0, 10, 0}])
       assert %{{127, 0, 10, 0} => expire_at} =
         GenServer.call(worker, :get_permissions)
 
@@ -51,14 +51,14 @@ defmodule Fennec.UDP.CreatePermissionTest do
       udp = ctx.udp
       worker = worker(udp, 0)
 
-      udp_create_permissions(udp, [{127, 0, 10, 0}, {127, 0, 10, 1}])
+      UDP.create_permissions(udp, [{127, 0, 10, 0}, {127, 0, 10, 1}])
 
       # Time passes
       time_passed = 2 * 60
       with_mock Fennec.Helper, [:passthrough], [
         now: fn -> :meck.passthrough([]) + time_passed end
       ] do
-        udp_create_permissions(udp, [{127, 0, 10, 2}, {127, 0, 10, 3}])
+        UDP.create_permissions(udp, [{127, 0, 10, 2}, {127, 0, 10, 3}])
 
         assert %{
           {127, 0, 10, 0} => expire_at_0,
@@ -78,7 +78,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
       udp = ctx.udp
       worker = worker(udp, 0)
 
-      udp_create_permissions(udp, [{127, 0, 10, 0}])
+      UDP.create_permissions(udp, [{127, 0, 10, 0}])
       assert %{{127, 0, 10, 0} => expire_at_1} =
         GenServer.call(worker, :get_permissions)
 
@@ -87,7 +87,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
       with_mock Fennec.Helper, [:passthrough], [
         now: fn -> :meck.passthrough([]) + time_passed end
       ] do
-        udp_create_permissions(udp, [{127, 0, 10, 0}])
+        UDP.create_permissions(udp, [{127, 0, 10, 0}])
 
         assert %{{127, 0, 10, 0} => expire_at_2} =
           GenServer.call(worker, :get_permissions)
@@ -98,13 +98,12 @@ defmodule Fennec.UDP.CreatePermissionTest do
     end
 
     defp worker(udp, client_id) do
-      alias Fennec.UDP
       alias Fennec.UDP.Dispatcher
 
-      base_name = UDP.base_name(udp.server_port)
-      dispatcher = UDP.dispatcher_name(base_name)
+      base_name = Fennec.UDP.base_name(udp.server_port)
+      dispatcher = Fennec.UDP.dispatcher_name(base_name)
       [{_, worker}] = Dispatcher.lookup_worker(dispatcher, udp.client_address,
-                                               client_port(udp, client_id))
+                                               UDP.client_port(udp, client_id))
       worker
     end
   end
@@ -116,14 +115,14 @@ defmodule Fennec.UDP.CreatePermissionTest do
         handle_peer_data: fn(_, _, _, _, state) -> state end
       ] do
         # Allocate
-        allocate_res = udp_allocate(udp)
+        allocate_res = UDP.allocate(udp)
         %XORRelayedAddress{
           address: relay_ip,
           port: relay_port
         } = Params.get_attr(allocate_res, XORRelayedAddress)
 
         # Invalied CreatePermission
-        udp_create_permissions(udp, [{127, 0, 0, 2}])
+        UDP.create_permissions(udp, [{127, 0, 0, 2}])
 
         # Peer sends data
         {:ok, sock} = :gen_udp.open(0)
@@ -139,14 +138,14 @@ defmodule Fennec.UDP.CreatePermissionTest do
         handle_peer_data: fn(_, _, _, _, state) -> state end
       ] do
         # Allocate
-        allocate_res = udp_allocate(udp)
+        allocate_res = UDP.allocate(udp)
         %XORRelayedAddress{
           address: relay_ip,
           port: relay_port
         } = Params.get_attr(allocate_res, XORRelayedAddress)
 
         # CreatePermission
-        udp_create_permissions(udp, [{127, 0, 0, 1}])
+        UDP.create_permissions(udp, [{127, 0, 0, 1}])
 
         # Time passes
         with_mock Fennec.Helper, [:passthrough], [
@@ -167,14 +166,14 @@ defmodule Fennec.UDP.CreatePermissionTest do
         handle_peer_data: fn(_, _, _, _, state) -> state end
       ] do
         # Allocate
-        allocate_res = udp_allocate(udp)
+        allocate_res = UDP.allocate(udp)
         %XORRelayedAddress{
           address: relay_ip,
           port: relay_port
         } = Params.get_attr(allocate_res, XORRelayedAddress)
 
         # CreatePermission
-        udp_create_permissions(udp, [{127, 0, 0, 1}])
+        UDP.create_permissions(udp, [{127, 0, 0, 1}])
 
         # Peer sends data
         {:ok, sock} = :gen_udp.open(0)
@@ -189,12 +188,12 @@ defmodule Fennec.UDP.CreatePermissionTest do
 
     test "fails without XORPeerAddress attribute", ctx do
       udp = ctx.udp
-      udp_allocate(udp)
+      UDP.allocate(udp)
 
       id = Params.generate_id()
-      req = create_permission_request(id, [])
+      req = UDP.create_permission_request(id, [])
 
-      resp = udp_communicate(udp, 0, req)
+      resp = UDP.communicate(udp, 0, req)
 
       params = Format.decode!(resp)
       assert %Params{class: :failure,
@@ -208,9 +207,9 @@ defmodule Fennec.UDP.CreatePermissionTest do
     test "fails without active allocation", ctx do
       udp = ctx.udp
       id = Params.generate_id()
-      req = create_permission_request(id, [])
+      req = UDP.create_permission_request(id, [])
 
-      resp = udp_communicate(udp, 0, req)
+      resp = UDP.communicate(udp, 0, req)
 
       params = Format.decode!(resp)
       assert %Params{class: :failure,
@@ -223,13 +222,13 @@ defmodule Fennec.UDP.CreatePermissionTest do
 
     test "succeeds with one XORPeerAddress", ctx do
       udp = ctx.udp
-      udp_allocate(udp)
+      UDP.allocate(udp)
 
       id = Params.generate_id()
-      peers = peers([{123, 123, 6, 1}])
-      req = create_permission_request(id, peers)
+      peers = UDP.peers([{123, 123, 6, 1}])
+      req = UDP.create_permission_request(id, peers)
 
-      resp = udp_communicate(udp, 0, req)
+      resp = UDP.communicate(udp, 0, req)
 
       params = Format.decode!(resp)
       assert %Params{class: :success,
@@ -239,17 +238,17 @@ defmodule Fennec.UDP.CreatePermissionTest do
 
     test "succeeds with multiple XORPeerAddress", ctx do
       udp = ctx.udp
-      udp_allocate(udp)
+      UDP.allocate(udp)
 
       id = Params.generate_id()
-      peers = peers([
+      peers = UDP.peers([
         {123, 123, 6, 1},
         {123, 123, 6, 2},
         {123, 123, 6, 3},
       ])
-      req = create_permission_request(id, peers)
+      req = UDP.create_permission_request(id, peers)
 
-      resp = udp_communicate(udp, 0, req)
+      resp = UDP.communicate(udp, 0, req)
 
       params = Format.decode!(resp)
       assert %Params{class: :success,
