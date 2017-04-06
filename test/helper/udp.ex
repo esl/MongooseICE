@@ -21,10 +21,6 @@ defmodule Helper.UDP do
     %Params{class: :indication, method: :binding, identifier: id} |> Format.encode()
   end
 
-  def allocate_request(id) do
-    allocate_request(id, [%RequestedTransport{protocol: :udp}])
-  end
-
   def create_permission_params(id, attrs) do
     %Params{class: :request, method: :create_permission, identifier: id,
             attributes: attrs}
@@ -35,13 +31,23 @@ defmodule Helper.UDP do
     |> Format.encode()
   end
 
+  def allocate_request(id) do
+    allocate_request(id, [%RequestedTransport{protocol: :udp}])
+  end
+
+  def allocate_request(id, attrs) do
+    allocate_params(id, attrs)
+    |> Format.encode()
+  end
+
   def allocate_params(id, attrs) do
     %Params{class: :request, method: :allocate, identifier: id,
             attributes: attrs}
   end
 
-  def allocate_request(id, attrs) do
-    allocate_params(id, attrs)
+  def refresh_request(id, attrs) do
+    %Params{class: :request, method: :refresh, identifier: id,
+            attributes: attrs}
     |> Format.encode()
   end
 
@@ -82,7 +88,23 @@ defmodule Helper.UDP do
             identifier: ^id} = params
   end
 
+  def refresh(udp, attrs \\ [], username \\ @default_user, client_id \\ 0) do
+    id = Params.generate_id()
+    req = refresh_request(id, attrs ++ [%Username{value: username}])
+    resp = communicate(udp, client_id, req)
+    params = Format.decode!(resp)
+    %Params{class: :success,
+            method: :refresh,
+            identifier: ^id} = params
+  end
+
   ## Communication
+
+  def setup_connection(ctx) do
+    udp = connect({0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 1}, 1)
+    on_exit fn -> close(udp) end
+    udp
+  end
 
   def connect(server_address, client_address, client_count) do
     server_port = Helper.PortMaster.checkout_port(:server)
@@ -140,4 +162,5 @@ defmodule Helper.UDP do
   def client_port(udp, client_id) do
      udp.client_port_base + client_id + 1
   end
+
 end

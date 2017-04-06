@@ -91,7 +91,7 @@ defmodule Fennec.UDP.Worker do
   end
 
   def handle_info(:timeout, state) do
-    {:stop, :normal, state}
+    handle_timeout(state)
   end
 
   def handle_peer_data(:allowed, _ip, _port, _data, state) do
@@ -100,6 +100,12 @@ defmodule Fennec.UDP.Worker do
   # This function clouse is for (not) handling rejected peer's data.
   # It exists solely to make testing easier.
   def handle_peer_data(_, _ip, _port, _data, state), do: state
+
+  # Extracted as a separate function,
+  # as it's easier to trace for side effects this way.
+  defp handle_timeout(state) do
+    {:stop, :normal, state}
+  end
 
   defp maybe_update_nonce(state) do
     %{nonce_updated_at: last_update, turn: turn_state} = state
