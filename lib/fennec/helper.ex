@@ -18,11 +18,6 @@ defmodule Fennec.Helper do
     end
   end
 
-  @spec now() :: integer
-  def now do
-    System.system_time(:seconds)
-  end
-
   @spec inet_to_string(Fennec.ip) :: String.t
   def inet_to_string(addr) do
     Kernel.to_string(:inet.ntoa(addr))

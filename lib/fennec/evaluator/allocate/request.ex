@@ -32,7 +32,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
     %TURN.Allocation{socket: socket, expire_at: expire_at} = allocation
     {:ok, {socket_addr, port}} = :inet.sockname(socket)
     addr = server[:relay_ip] || socket_addr
-    lifetime = max(0, expire_at - Fennec.Helper.now)
+    lifetime = max(0, expire_at - Fennec.Time.system_time(:second))
     attrs = [
       %Attribute.XORMappedAddress{
         family: family(a),
@@ -56,7 +56,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
     {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
     allocation = %Fennec.TURN.Allocation{
       socket: socket,
-      expire_at: Fennec.Helper.now + @lifetime,
+      expire_at: Fennec.Time.system_time(:second) + @lifetime,
       req_id: Params.get_id(params),
       owner_username: owner_username(params)
     }

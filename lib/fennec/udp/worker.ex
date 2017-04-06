@@ -71,7 +71,7 @@ defmodule Fennec.UDP.Worker do
 
   def handle_info({:udp, socket, ip, port, data}, state = %{turn:
                   %TURN{allocation: %TURN.Allocation{socket: socket}}}) do
-    now = Fennec.Helper.now
+    now = Fennec.Time.system_time(:second)
     next_state =
       case get_perm_expiration_time(state, ip) do
         nil ->
@@ -104,7 +104,7 @@ defmodule Fennec.UDP.Worker do
   defp maybe_update_nonce(state) do
     %{nonce_updated_at: last_update, turn: turn_state} = state
     expire_at = last_update + Fennec.Auth.nonce_lifetime()
-    now = Fennec.Helper.now
+    now = Fennec.Time.system_time(:second)
     case expire_at < now do
       true ->
         new_turn_state = %TURN{turn_state | nonce: Fennec.Auth.gen_nonce()}
@@ -121,7 +121,7 @@ defmodule Fennec.UDP.Worker do
   defp timeout(%{turn: %TURN{allocation: nil}}), do: @timeout
   defp timeout(%{turn: %TURN{allocation: allocation}}) do
     %TURN.Allocation{expire_at: expire_at} = allocation
-    now = Fennec.Helper.now()
+    now = Fennec.Time.system_time(:second)
     timeout_ms = (expire_at - now) * 1000
     max(0, timeout_ms)
   end

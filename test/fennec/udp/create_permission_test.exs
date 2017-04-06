@@ -40,7 +40,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
       assert %{{127, 0, 10, 0} => expire_at} =
         GenServer.call(worker, :get_permissions)
 
-      later_5min = Fennec.Helper.now + 5 * 60
+      later_5min = Fennec.Time.system_time(:second) + 5 * 60
       assert expire_at in (later_5min - 5)..(later_5min + 5)
     end
 
@@ -52,8 +52,8 @@ defmodule Fennec.UDP.CreatePermissionTest do
 
       # Time passes
       time_passed = 2 * 60
-      with_mock Fennec.Helper, [:passthrough], [
-        now: fn -> :meck.passthrough([]) + time_passed end
+      with_mock Fennec.Time, [:passthrough], [
+        system_time: fn (:second) -> :meck.passthrough([:second]) + time_passed end
       ] do
         UDP.create_permissions(udp, [{127, 0, 10, 2}, {127, 0, 10, 3}])
 
@@ -81,8 +81,8 @@ defmodule Fennec.UDP.CreatePermissionTest do
 
       # Time passes
       time_passed = 2 * 60
-      with_mock Fennec.Helper, [:passthrough], [
-        now: fn -> :meck.passthrough([]) + time_passed end
+      with_mock Fennec.Time, [:passthrough], [
+        system_time: fn (:second) -> :meck.passthrough([:second]) + time_passed end
       ] do
         UDP.create_permissions(udp, [{127, 0, 10, 0}])
 
@@ -145,8 +145,8 @@ defmodule Fennec.UDP.CreatePermissionTest do
         UDP.create_permissions(udp, [{127, 0, 0, 1}])
 
         # Time passes
-        with_mock Fennec.Helper, [:passthrough], [
-          now: fn -> :meck.passthrough([]) + 5 * 60 end
+        with_mock Fennec.Time, [:passthrough], [
+          system_time: fn (:second) -> :meck.passthrough([:second]) + 5 * 60 end
         ] do
           # Peer sends data
           {:ok, sock} = :gen_udp.open(0)
