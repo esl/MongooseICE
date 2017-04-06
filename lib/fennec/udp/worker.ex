@@ -66,16 +66,29 @@ defmodule Fennec.UDP.Worker do
 
   def handle_info({:udp, socket, ip, port, data}, state = %{turn:
                   %TURN{allocation: %TURN.Allocation{socket: socket}}}) do
-    _ = handle_peer_data(ip, port, data, state)
-    {:noreply, state}
+    next_state = handle_peer_data(ip, port, data, state)
+    {:noreply, next_state}
   end
 
   def handle_info(:timeout, state) do
     {:stop, :normal, state}
   end
 
-  defp handle_peer_data(ip, port, data, _state) do
+  defp handle_peer_data(ip, port, data, state) do
     Logger.debug(~s"Peer #{ip}:#{port} sent data: #{data}")
+    now = System.os_time(:seconds)
+    case Enum.find(state.turn.perms, nil, &(&1.address == ip)) do
+      %TURN.Permission{expire_at: expire_at} when expire_at < now ->
+        Logger.debug(~s"Processing data from peer #{ip}:#{port}")
+        state
+      %TURN.Permission{} = p ->
+        Logger.debug(~s"Dropped data from peer #{ip}:#{port} due to stale permission")
+        new_turn_state = %TURN{state.turn | permissions: state.turn.perms -- [p]}
+        %{state | turn: new_turn_state}
+      nil ->
+        Logger.debug(~s"Dropped data from peer #{ip}:#{port} due to no permission")
+        state
+    end
   end
 
   defp maybe_update_nonce(state) do
