@@ -66,7 +66,22 @@ defmodule Fennec.UDP.Worker do
 
   def handle_info({:udp, socket, ip, port, data}, state = %{turn:
                   %TURN{allocation: %TURN.Allocation{socket: socket}}}) do
-    next_state = handle_peer_data(ip, port, data, state)
+    now = Fennec.Helper.now
+    next_state =
+      case Map.get(state.turn.permissions, ip) do
+        nil ->
+          Logger.debug(~s"Dropped data from peer #{ip}:#{port} due to no permission")
+          __MODULE__.handle_peer_data(:no_permission, ip, port, data, state)
+        expire_at when expire_at > now ->
+          Logger.debug(~s"Processing data from peer #{ip}:#{port}")
+          __MODULE__.handle_peer_data(:allowed, ip, port, data, state)
+        _ ->
+          Logger.debug(~s"Dropped data from peer #{ip}:#{port} due to stale permission")
+          new_perms = Map.delete(state.turn.permissions, ip)
+          new_turn_state = %TURN{state.turn | permissions: new_perms}
+          next_state = %{state | turn: new_turn_state}
+          __MODULE__.handle_peer_data(:stale_permission, ip, port, data, next_state)
+      end
     {:noreply, next_state}
   end
 
@@ -74,28 +89,17 @@ defmodule Fennec.UDP.Worker do
     {:stop, :normal, state}
   end
 
-  defp handle_peer_data(ip, port, data, state) do
-    Logger.debug(~s"Peer #{ip}:#{port} sent data: #{data}")
-    now = System.system_time(:seconds)
-    case state.turn.perms[ip] do
-      nil ->
-        Logger.debug(~s"Dropped data from peer #{ip}:#{port} due to no permission")
-        state
-      expire_at when expire_at < now ->
-        Logger.debug(~s"Processing data from peer #{ip}:#{port}")
-        state
-      _ ->
-        Logger.debug(~s"Dropped data from peer #{ip}:#{port} due to stale permission")
-        new_perms = Map.delete(state.turn.perms, ip)
-        new_turn_state = %TURN{state.turn | permissions: new_perms}
-        %{state | turn: new_turn_state}
-    end
+  def handle_peer_data(:allowed, _ip, _port, _data, state) do
+    state
   end
+  # This function clouse is for (not) handling rejected peer's data.
+  # It exists solely to make testing easier.
+  def handle_peer_data(_, _ip, _port, _data, state), do: state
 
   defp maybe_update_nonce(state) do
     %{nonce_updated_at: last_update, turn: turn_state} = state
     expire_at = last_update + Fennec.Auth.nonce_lifetime()
-    now = System.system_time(:seconds)
+    now = Fennec.Helper.now
     case expire_at < now do
       true ->
         new_turn_state = %TURN{turn_state | nonce: Fennec.Auth.gen_nonce()}
@@ -108,7 +112,7 @@ defmodule Fennec.UDP.Worker do
   defp timeout(%{turn: %TURN{allocation: nil}}), do: @timeout
   defp timeout(%{turn: %TURN{allocation: allocation}}) do
     %TURN.Allocation{expire_at: expire_at} = allocation
-    now = System.system_time(:second)
+    now = Fennec.Helper.now
     max(0, expire_at - now)
   end
 end

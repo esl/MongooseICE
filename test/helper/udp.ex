@@ -9,6 +9,7 @@ defmodule Helper.UDP do
   import Mock
 
   @recv_timeout 5_000
+  @default_user "user"
 
   def binding_request(id) do
     %Params{class: :request, method: :binding, identifier: id} |> Format.encode()
@@ -23,10 +24,10 @@ defmodule Helper.UDP do
   end
 
   def peers(peers) do
-    for {ip, port} <- peers do
+    for ip <- peers do
       %XORPeerAddress{
         address: ip,
-        port: port,
+        port: 0,
         family: Fennec.Evaluator.Helper.family(ip)
       }
     end
@@ -37,7 +38,7 @@ defmodule Helper.UDP do
             attributes: attrs}
   end
 
-  def create_permissions_request(id, attrs) do
+  def create_permission_request(id, attrs) do
     create_permission_params(id, attrs)
     |> Format.encode()
   end
@@ -75,7 +76,7 @@ defmodule Helper.UDP do
     }
   end
 
-  def udp_allocate(udp, username \\ "user") do
+  def udp_allocate(udp, username \\ @default_user) do
     id = Params.generate_id()
     req = allocate_request(id, [
       %RequestedTransport{protocol: :udp},
@@ -85,6 +86,18 @@ defmodule Helper.UDP do
     params = Format.decode!(resp)
     %Params{class: :success,
             method: :allocate,
+            identifier: ^id} = params
+  end
+
+  def udp_create_permissions(udp, ips, username \\ @default_user) do
+    id = Params.generate_id()
+    req = create_permission_request(id, peers(ips) ++ [
+      %Username{value: username}
+    ])
+    resp = udp_communicate(udp, 0, req)
+    params = Format.decode!(resp)
+    %Params{class: :success,
+            method: :create_permission,
             identifier: ^id} = params
   end
 
