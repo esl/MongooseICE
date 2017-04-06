@@ -3,7 +3,7 @@ defmodule Fennec.UDP.Worker do
   # Process handling STUN messages received over UDP
   #
   # Currently when worker receives a message which can't
-  # be decoded or don't know how to process a message
+  # be decoded or doesn't know how to process a message
   # it simply crashes.
 
   alias Fennec.UDP
