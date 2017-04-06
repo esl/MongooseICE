@@ -76,25 +76,25 @@ defmodule Helper.UDP do
     }
   end
 
-  def udp_allocate(udp, username \\ @default_user) do
+  def udp_allocate(udp, username \\ @default_user, client_id \\ 0) do
     id = Params.generate_id()
     req = allocate_request(id, [
       %RequestedTransport{protocol: :udp},
       %Username{value: username}
     ])
-    resp = udp_communicate(udp, 0, req)
+    resp = udp_communicate(udp, client_id, req)
     params = Format.decode!(resp)
     %Params{class: :success,
             method: :allocate,
             identifier: ^id} = params
   end
 
-  def udp_create_permissions(udp, ips, username \\ @default_user) do
+  def udp_create_permissions(udp, ips, username \\ @default_user, client_id \\ 0) do
     id = Params.generate_id()
     req = create_permission_request(id, peers(ips) ++ [
       %Username{value: username}
     ])
-    resp = udp_communicate(udp, 0, req)
+    resp = udp_communicate(udp, client_id, req)
     params = Format.decode!(resp)
     %Params{class: :success,
             method: :create_permission,

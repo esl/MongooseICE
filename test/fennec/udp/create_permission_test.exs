@@ -2,7 +2,6 @@ defmodule Fennec.UDP.CreatePermissionTest do
   use ExUnit.Case, async: false
   use Helper.Macros
   import Helper.UDP
-  import ExUnit.CaptureLog
   import Mock
 
   alias Jerboa.Params
@@ -15,7 +14,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
     port_mod = test_case_id * 10
     udp =
       udp_connect({127, 0, 0, 1}, 12_100 + port_mod,
-                  {127, 0, 0, 1}, 42_100 + port_mod, 1)
+                  {127, 0, 0, 1}, 42_100 + port_mod, 2)
     on_exit fn ->
       udp_close(udp)
     end
@@ -23,8 +22,95 @@ defmodule Fennec.UDP.CreatePermissionTest do
     {:ok, [udp: udp]}
   end
 
+  describe "worker's permissions state" do
+    setup ctx do
+      udp_allocate(ctx.udp)
+      {:ok, []}
+    end
+
+    test "contains no permissions after allocate", ctx do
+      udp = ctx.udp
+      worker = worker(udp, 0)
+
+      assert %{} == GenServer.call(worker, :get_permissions)
+    end
+
+    test "contains permission after create_permission request", ctx do
+      udp = ctx.udp
+      worker = worker(udp, 0)
+
+      udp_create_permissions(udp, [{127, 0, 10, 0}])
+      assert %{{127, 0, 10, 0} => expire_at} =
+        GenServer.call(worker, :get_permissions)
+
+      later_5min = Fennec.Helper.now + 5 * 60
+      assert expire_at in (later_5min - 5)..(later_5min + 5)
+    end
+
+    test "contains several permission after create_permission request", ctx do
+      udp = ctx.udp
+      worker = worker(udp, 0)
+
+      udp_create_permissions(udp, [{127, 0, 10, 0}, {127, 0, 10, 1}])
+
+      # Time passes
+      time_passed = 2 * 60
+      with_mock Fennec.Helper, [:passthrough], [
+        now: fn -> :meck.passthrough([]) + time_passed end
+      ] do
+        udp_create_permissions(udp, [{127, 0, 10, 2}, {127, 0, 10, 3}])
+
+        assert %{
+          {127, 0, 10, 0} => expire_at_0,
+          {127, 0, 10, 1} => expire_at_1,
+          {127, 0, 10, 2} => expire_at_2,
+          {127, 0, 10, 3} => expire_at_3
+        } = GenServer.call(worker, :get_permissions)
+
+        assert expire_at_0 == expire_at_1
+        assert expire_at_2 == expire_at_3
+
+        assert expire_at_2 >= expire_at_0 + time_passed
+      end
+    end
+
+    test "contains refreshed permission after second create_permission", ctx do
+      udp = ctx.udp
+      worker = worker(udp, 0)
+
+      udp_create_permissions(udp, [{127, 0, 10, 0}])
+      assert %{{127, 0, 10, 0} => expire_at_1} =
+        GenServer.call(worker, :get_permissions)
+
+      # Time passes
+      time_passed = 2 * 60
+      with_mock Fennec.Helper, [:passthrough], [
+        now: fn -> :meck.passthrough([]) + time_passed end
+      ] do
+        udp_create_permissions(udp, [{127, 0, 10, 0}])
+
+        assert %{{127, 0, 10, 0} => expire_at_2} =
+          GenServer.call(worker, :get_permissions)
+
+        assert expire_at_2 - expire_at_1 >= time_passed
+        assert expire_at_2 - expire_at_1 < 2 * time_passed
+      end
+    end
+
+    defp worker(udp, client_id) do
+      alias Fennec.UDP
+      alias Fennec.UDP.Dispatcher
+
+      base_name = UDP.base_name(udp.server_port)
+      dispatcher = UDP.dispatcher_name(base_name)
+      [{_, worker}] = Dispatcher.lookup_worker(dispatcher, udp.client_address,
+                                               client_port(udp, client_id))
+      worker
+    end
+  end
+
   describe "peer's data" do
-    test "gets rejected without permission", ctx do
+    test "gets rejected without correct permission", ctx do
       udp = ctx.udp
       with_mock Worker, [:passthrough], [
         handle_peer_data: fn(_, _, _, _, state) -> state end
@@ -36,7 +122,8 @@ defmodule Fennec.UDP.CreatePermissionTest do
           port: relay_port
         } = Params.get_attr(allocate_res, XORRelayedAddress)
 
-        # No CreatePermission
+        # Invalied CreatePermission
+        udp_create_permissions(udp, [{127, 0, 0, 2}])
 
         # Peer sends data
         {:ok, sock} = :gen_udp.open(0)

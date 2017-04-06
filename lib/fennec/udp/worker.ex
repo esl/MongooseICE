@@ -46,8 +46,13 @@ defmodule Fennec.UDP.Worker do
   def init([dispatcher, server_opts, socket, ip, port]) do
     _ = Dispatcher.register_worker(dispatcher, self(), ip, port)
     client = %{ip: ip, port: port}
-    {:ok, %{socket: socket, client: client, nonce_updated_at: 0,
-            server: server_opts, turn: %TURN{}}}
+    state = %{socket: socket, client: client, nonce_updated_at: 0,
+              server: server_opts, turn: %TURN{}}
+    {:ok, state, timeout(state)}
+  end
+
+  def handle_call(:get_permissions, _from, state) do
+    {:reply, state.turn.permissions, state, timeout(state)}
   end
 
   def handle_cast({:process_data, data}, state) do
@@ -82,7 +87,7 @@ defmodule Fennec.UDP.Worker do
           next_state = %{state | turn: new_turn_state}
           __MODULE__.handle_peer_data(:stale_permission, ip, port, data, next_state)
       end
-    {:noreply, next_state}
+    {:noreply, next_state, timeout(next_state)}
   end
 
   def handle_info(:timeout, state) do
