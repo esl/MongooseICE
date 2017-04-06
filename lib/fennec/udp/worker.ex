@@ -76,25 +76,26 @@ defmodule Fennec.UDP.Worker do
 
   defp handle_peer_data(ip, port, data, state) do
     Logger.debug(~s"Peer #{ip}:#{port} sent data: #{data}")
-    now = System.os_time(:seconds)
-    case Enum.find(state.turn.perms, nil, &(&1.address == ip)) do
-      %TURN.Permission{expire_at: expire_at} when expire_at < now ->
-        Logger.debug(~s"Processing data from peer #{ip}:#{port}")
-        state
-      %TURN.Permission{} = p ->
-        Logger.debug(~s"Dropped data from peer #{ip}:#{port} due to stale permission")
-        new_turn_state = %TURN{state.turn | permissions: state.turn.perms -- [p]}
-        %{state | turn: new_turn_state}
+    now = System.system_time(:seconds)
+    case state.turn.perms[ip] do
       nil ->
         Logger.debug(~s"Dropped data from peer #{ip}:#{port} due to no permission")
         state
+      expire_at when expire_at < now ->
+        Logger.debug(~s"Processing data from peer #{ip}:#{port}")
+        state
+      _ ->
+        Logger.debug(~s"Dropped data from peer #{ip}:#{port} due to stale permission")
+        new_perms = Map.delete(state.turn.perms, ip)
+        new_turn_state = %TURN{state.turn | permissions: new_perms}
+        %{state | turn: new_turn_state}
     end
   end
 
   defp maybe_update_nonce(state) do
     %{nonce_updated_at: last_update, turn: turn_state} = state
     expire_at = last_update + Fennec.Auth.nonce_lifetime()
-    now = System.os_time(:seconds)
+    now = System.system_time(:seconds)
     case expire_at < now do
       true ->
         new_turn_state = %TURN{turn_state | nonce: Fennec.Auth.gen_nonce()}
