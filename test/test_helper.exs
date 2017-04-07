@@ -8,3 +8,5 @@ Enum.each files, fn(file) ->
 end
 
 Code.require_file "fennec/udp/auth_template.ex", __DIR__
+
+{:ok, _pid} = Helper.PortMaster.start_link()

@@ -11,12 +11,9 @@ defmodule Fennec.UDP.AllocateTest do
 
   describe "allocate request" do
 
-    setup ctx do
-      test_case_id = ctx.line
-      port_mod = test_case_id * 10
+    setup do
       udp =
-        UDP.connect({0, 0, 0, 0, 0, 0, 0, 1}, 12_100 + port_mod,
-                    {0, 0, 0, 0, 0, 0, 0, 1}, 42_100 + port_mod, 1)
+        UDP.connect({0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 1}, 1)
       on_exit fn ->
         UDP.close(udp)
       end

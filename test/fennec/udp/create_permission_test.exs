@@ -9,12 +9,9 @@ defmodule Fennec.UDP.CreatePermissionTest do
   alias Jerboa.Format.Body.Attribute.{ErrorCode, XORRelayedAddress}
   alias Fennec.UDP.Worker
 
-  setup ctx do
-    test_case_id = ctx.line
-    port_mod = test_case_id * 10
+  setup do
     udp =
-      UDP.connect({127, 0, 0, 1}, 12_100 + port_mod,
-                  {127, 0, 0, 1}, 42_100 + port_mod, 2)
+      UDP.connect({127, 0, 0, 1}, {127, 0, 0, 1}, 2)
     on_exit fn ->
       UDP.close(udp)
     end

@@ -1,5 +1,5 @@
 defmodule Helper.Macros do
-  defmacro __using__(opts) do
+  defmacro __using__(_opts) do
     quote do
       @eventually_timeout 5_000
       defmacro eventually(truly) do
