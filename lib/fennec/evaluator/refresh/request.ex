@@ -37,9 +37,22 @@ defmodule Fennec.Evaluator.Refresh.Request do
       %Lifetime{duration: 0} ->
         new_a = %Allocation{ a | expire_at: 0 }
         {:respond, {params, %TURN{ t | allocation: new_a }}}
-      %Lifetime{duration: _} ->
-        :erlang.error("not-implemented")
+      %Lifetime{duration: d} ->
+        refresh_(params, t, d)
+      nil ->
+        refresh_(params, t, Allocation.default_lifetime())
     end
+  end
+
+  defp refresh_(params, %TURN{allocation: a} = t, requested_lifetime) do
+    lifetime =
+      requested_lifetime
+      |> min(Allocation.maximum_lifetime())
+      |> max(Allocation.default_lifetime())
+    new_params = %Params{ params | attributes: [%Lifetime{duration: lifetime}] }
+    now = Fennec.Time.system_time(:seconds)
+    new_a = %Allocation{ a | expire_at: now + lifetime }
+    {:respond, {new_params, %TURN{ t | allocation: new_a }}}
   end
 
 end
