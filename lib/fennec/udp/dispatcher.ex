@@ -34,8 +34,13 @@ defmodule Fennec.UDP.Dispatcher do
     Registry.register(dispatcher, key(ip, port), worker_pid)
   end
 
+  @spec lookup_worker(atom, Fennec.ip, Fennec.portn) :: [{pid, pid}]
+  def lookup_worker(dispatcher, ip, port) do
+    Registry.lookup(dispatcher, key(ip, port))
+  end
+
   defp find_or_start_worker(dispatcher, worker_sup, socket, ip, port) do
-    case Registry.lookup(dispatcher, key(ip, port)) do
+    case lookup_worker(dispatcher, ip, port) do
       [{_owner, pid}] -> {:ok, pid}
       [] ->
         start_worker(worker_sup, socket, ip, port)
