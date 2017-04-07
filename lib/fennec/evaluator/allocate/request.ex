@@ -1,7 +1,11 @@
 defmodule Fennec.Evaluator.Allocate.Request do
   @moduledoc false
 
-  import Fennec.Evaluator.Helper
+  import Fennec.Evaluator.Helper, only: [
+    family: 1,
+    maybe: 2, maybe: 3
+  ]
+
   alias Jerboa.Format.Body.Attribute
   alias Jerboa.Params
   alias Fennec.TURN
