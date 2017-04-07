@@ -7,7 +7,7 @@ defmodule Fennec.TURN do
 
   @type t :: %__MODULE__{
     allocation: nil | Fennec.TURN.Allocation.t,
-    permissions: %{Fennec.ip => integer},
+    permissions: %{peer_addr :: Fennec.ip => expiration_time :: integer},
     channels: [],
     nonce: String.t,
     realm: String.t

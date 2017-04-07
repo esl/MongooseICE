@@ -73,7 +73,7 @@ defmodule Fennec.UDP.Worker do
                   %TURN{allocation: %TURN.Allocation{socket: socket}}}) do
     now = Fennec.Helper.now
     next_state =
-      case Map.get(state.turn.permissions, ip) do
+      case get_perm_expiration_time(state, ip) do
         nil ->
           Logger.debug(~s"Dropped data from peer #{ip}:#{port} due to no permission")
           __MODULE__.handle_peer_data(:no_permission, ip, port, data, state)
@@ -112,6 +112,10 @@ defmodule Fennec.UDP.Worker do
       false ->
         state
     end
+  end
+
+  defp get_perm_expiration_time(state, ip) do
+    Map.get(state.turn.permissions, ip)
   end
 
   defp timeout(%{turn: %TURN{allocation: nil}}), do: @timeout

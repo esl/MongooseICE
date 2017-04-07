@@ -107,37 +107,47 @@ defmodule Fennec.UDP.AllocateTest do
       assert relayed_port != udp.server_port
     end
 
-    test "returns error after second allocation", ctx do
+    test "returns error after second allocation with different id", ctx do
       udp = ctx.udp
       id1 = Params.generate_id()
       id2 = Params.generate_id()
       req1 = UDP.allocate_request(id1)
       req2 = UDP.allocate_request(id2)
 
-      _resp = UDP.communicate(udp, 0, req1)
-      resp = UDP.communicate(udp, 0, req2)
+      resp1 = UDP.communicate(udp, 0, req1)
+      params1 = Format.decode!(resp1)
+      assert %Params{class: :success,
+                     method: :allocate,
+                     identifier: ^id1} = params1
 
-      params = Format.decode!(resp)
+      resp2 = UDP.communicate(udp, 0, req2)
+
+      params2 = Format.decode!(resp2)
       assert %Params{class: :failure,
                      method: :allocate,
                      identifier: ^id2,
-                     attributes: [error]} = params
+                     attributes: [error]} = params2
       assert %ErrorCode{code: 437} = error
     end
 
-    test "returns success after redundant allocation", ctx do
+    test "returns success after second allocation with the same id", ctx do
       udp = ctx.udp
       id = Params.generate_id()
       req = UDP.allocate_request(id)
 
-      _resp = UDP.communicate(udp, 0, req)
-      resp = UDP.communicate(udp, 0, req)
+      resp1 = UDP.communicate(udp, 0, req)
+      params1 = Format.decode!(resp1)
+      assert %Params{class: :success,
+                     method: :allocate,
+                     identifier: ^id} = params1
 
-      params = Format.decode!(resp)
+      resp2 = UDP.communicate(udp, 0, req)
+
+      params2 = Format.decode!(resp2)
       assert %Params{class: :success,
                      method: :allocate,
                      identifier: ^id,
-                     attributes: attrs} = params
+                     attributes: attrs} = params2
       assert 3 = length(attrs)
     end
   end
