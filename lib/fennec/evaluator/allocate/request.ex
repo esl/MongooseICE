@@ -9,7 +9,6 @@ defmodule Fennec.Evaluator.Allocate.Request do
   alias Jerboa.Format.Body.Attribute
   alias Jerboa.Params
   alias Fennec.TURN
-  @lifetime 10 * 60
 
   @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
     :: {Params.t, TURN.t}
@@ -60,7 +59,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
     {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
     allocation = %Fennec.TURN.Allocation{
       socket: socket,
-      expire_at: Fennec.Time.system_time(:second) + @lifetime,
+      expire_at: Fennec.Time.system_time(:second) + TURN.Allocation.default_lifetime(),
       req_id: Params.get_id(params),
       owner_username: owner_username(params)
     }
