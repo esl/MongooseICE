@@ -3,14 +3,17 @@ defmodule Fennec.Evaluator.Indication do
 
   alias Jerboa.Params
   alias Fennec.TURN
+  alias Fennec.Evaluator
 
   @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
-    :: Params.t | :void
-  def service(parameters, _, _server, _turn_state) do
-    case method(parameters) do
+    :: :void
+  def service(params, client, server, turn_state) do
+    case method(params) do
       :binding ->
         ## This call is external to be mockable.
         __MODULE__.void()
+      :send ->
+        Evaluator.Send.Indication.service(params, client, server, turn_state)
     end
   end
 

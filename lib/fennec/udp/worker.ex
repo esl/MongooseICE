@@ -71,21 +71,19 @@ defmodule Fennec.UDP.Worker do
 
   def handle_info({:udp, socket, ip, port, data}, state = %{turn:
                   %TURN{allocation: %TURN.Allocation{socket: socket}}}) do
-    now = Fennec.Time.system_time(:second)
+    turn_state = state.turn
     next_state =
-      case get_perm_expiration_time(state, ip) do
-        nil ->
+      case TURN.has_permission(turn_state, ip) do
+        {^turn_state, false} ->
           Logger.debug(~s"Dropped data from peer #{ip}:#{port} due to no permission")
           __MODULE__.handle_peer_data(:no_permission, ip, port, data, state)
-        expire_at when expire_at > now ->
-          Logger.debug(~s"Processing data from peer #{ip}:#{port}")
-          __MODULE__.handle_peer_data(:allowed, ip, port, data, state)
-        _ ->
+        {new_turn_state, false} ->
           Logger.debug(~s"Dropped data from peer #{ip}:#{port} due to stale permission")
-          new_perms = Map.delete(state.turn.permissions, ip)
-          new_turn_state = %TURN{state.turn | permissions: new_perms}
           next_state = %{state | turn: new_turn_state}
           __MODULE__.handle_peer_data(:stale_permission, ip, port, data, next_state)
+        {^turn_state, true} ->
+          Logger.debug(~s"Processing data from peer #{ip}:#{port}")
+          __MODULE__.handle_peer_data(:allowed, ip, port, data, state)
       end
     {:noreply, next_state, timeout(next_state)}
   end
