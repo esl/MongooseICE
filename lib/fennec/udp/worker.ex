@@ -59,8 +59,8 @@ defmodule Fennec.UDP.Worker do
     state = maybe_update_nonce(state)
     next_state =
       case STUN.process_message(data, state.client, state.server, state.turn) do
-        {:ok, :void} ->
-          state
+        {:ok, {:void, new_turn_state}} ->
+          new_turn_state
         {:ok, {resp, new_turn_state}} ->
           :ok = :gen_udp.send(state.socket, state.client.ip,
                               state.client.port, resp)
