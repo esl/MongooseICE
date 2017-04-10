@@ -9,11 +9,16 @@ defmodule Fennec.Evaluator.Indication do
   def service(parameters, _, _server, _turn_state) do
     case method(parameters) do
       :binding ->
-        :void
+        ## This call is external to be mockable.
+        __MODULE__.void()
     end
   end
 
   defp method(params) do
     Params.get_method(params)
   end
+
+  @doc false
+  def void, do: :void
+
 end

@@ -11,7 +11,8 @@ defmodule Fennec.UDP.RefreshTest do
 
     import Mock, only: [
       called: 1,
-      with_mock: 3
+      with_mock: 3,
+      with_mocks: 2
     ]
 
     setup ctx do
@@ -56,14 +57,24 @@ defmodule Fennec.UDP.RefreshTest do
       params = UDP.refresh(ctx.udp, [%Attribute.Lifetime{duration: non_standard_lifetime}])
       ## then the allocation gets extended
       %Params{class: :success,
-              attributes: [%Attribute.Lifetime{duration: non_standard_lifetime}]} = params
+              attributes: [%Attribute.Lifetime{duration: ^non_standard_lifetime}]} = params
       ## time travel 1: future_after_expiry is the point at which the allocation
       ## would have expired if it hadn't been extended
-      with_mock Fennec.Time, [
-        system_time: fn (:second) -> future_after_expiry end
+      with_mocks [
+        {Fennec.Time, [],
+          [system_time: fn (:second) -> future_after_expiry end]},
+        {Fennec.Evaluator.Indication, [:passthrough], []}
       ] do
+        ## First indication triggers reading the new time.
+        ## If the allocation timed out, we would trigger the process exit here.
+        ## However, the owner process **might exit after we assert its existence.**
         :ok = UDP.send(ctx.udp, client_id, UDP.binding_indication(Params.generate_id()))
-        assert eventually called Fennec.Time.system_time(:second)
+        assert eventually called Fennec.Evaluator.Indication.void()
+        assert Process.alive?(allocation_owner)
+        ## Second indication asserts the allocation did not expire even
+        ## if the assertion above was a false positive.
+        :ok = UDP.send(ctx.udp, client_id, UDP.binding_indication(Params.generate_id()))
+        assert eventually called Fennec.Evaluator.Indication.void()
         assert Process.alive?(allocation_owner)
       end
       ## time travel 2: future_after_second_expiry is the point at which the allocation
