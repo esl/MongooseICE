@@ -35,11 +35,11 @@ end
 ### Checklist of STUN/TURN methods supported by Fennec
 
 - [x] Binding
-- [ ] Allocate
-- [ ] Refresh
-- [ ] Send
+- [x] Allocate
+- [x] Refresh
+- [x] Send
 - [ ] Data
-- [ ] CreatePermission
+- [x] CreatePermission
 - [ ] ChannelBind
 
 ### Checklist of STUN/TURN attributes supported by Fennec
@@ -47,18 +47,18 @@ end
 #### Comprehension Required
 
 - [x] XOR-MAPPED-ADDRESS
-- [ ] MESSAGE-INTEGRITY
-- [ ] ERROR-CODE
-- [ ] UNKNOWN-ATTRIBUTES
-- [ ] REALM
-- [ ] NONCE
+- [x] MESSAGE-INTEGRITY
+- [x] ERROR-CODE
+- [x] UNKNOWN-ATTRIBUTES
+- [x] REALM
+- [x] NONCE
 - [ ] CHANNEL-NUMBER
-- [ ] LIFETIME
-- [ ] XOR-PEER-ADDRESS
-- [ ] DATA
-- [ ] XOR-RELAYED-ADDRESS
+- [x] LIFETIME
+- [x] XOR-PEER-ADDRESS
+- [x] DATA
+- [x] XOR-RELAYED-ADDRESS
 - [ ] EVEN-PORT
-- [ ] REQUESTED-TRANSPORT
+- [x] REQUESTED-TRANSPORT
 - [ ] DONT-FRAGMENT
 - [ ] RESERVATION-TOKEN
 - [ ] PRIORITY
