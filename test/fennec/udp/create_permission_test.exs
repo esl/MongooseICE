@@ -41,7 +41,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
         GenServer.call(worker, :get_permissions)
 
       later_5min = Fennec.Time.system_time(:second) + 5 * 60
-      assert expire_at in (later_5min - 5)..(later_5min + 5)
+      assert_in_delta expire_at, later_5min, 5
     end
 
     test "contains several permission after create_permission request", ctx do
