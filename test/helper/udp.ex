@@ -84,8 +84,9 @@ defmodule Helper.UDP do
 
   ## Communication
 
-  def connect(server_address, server_port, client_address, client_port,
-                   client_count) do
+  def connect(server_address, client_address, client_count) do
+    server_port = Helper.PortMaster.checkout_port(:server)
+    client_port = Helper.PortMaster.checkout_port(:client)
     Application.put_env(:fennec, :relay_addr, server_address)
     Fennec.UDP.start_link(ip: server_address, port: server_port,
                           relay_ip: server_address)

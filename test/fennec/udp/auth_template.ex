@@ -23,11 +23,10 @@ defmodule Fennec.UDP.AuthTemplate do
                                           RequestedTransport, Nonce, Realm}
 
       describe unquote(request_str) <> " request" do
-        setup ctx do
+        setup do
           Application.put_env(:fennec, :secret, @valid_secret)
           udp =
-            UDP.connect({0, 0, 0, 0, 0, 0, 0, 1}, :crypto.rand_uniform(12_000, 35_000),
-                        {0, 0, 0, 0, 0, 0, 0, 1}, :crypto.rand_uniform(35_000, 65_000), 1)
+            UDP.connect({0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 1}, 1)
           on_exit fn ->
             UDP.close(udp)
           end
