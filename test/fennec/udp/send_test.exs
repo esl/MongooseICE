@@ -17,7 +17,7 @@ defmodule Fennec.UDP.SendTest do
       udp = ctx.udp
 
       id = Params.generate_id()
-      peer = XORPeerAddress.new({127,0,0,1}, 12345)
+      peer = XORPeerAddress.new({127, 0, 0, 1}, 12345)
       data = %Data{content: ""}
       req = UDP.send_request(id, [peer, data])
 
