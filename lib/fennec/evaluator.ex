@@ -8,6 +8,13 @@ defmodule Fennec.Evaluator do
   alias Fennec.Auth
   alias Jerboa.Format.Body.Attribute
 
+  @doc """
+  This function implements the second phase of the message processing. Here,
+  message gets authenticated, authorized and passed to specific request handler.
+  The response from the specific request handler gets normalized before
+  leaving this function (i.e. gets :success or :failure class or is
+  changed to :void if this is an response to :indication message).
+  """
   @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
     :: {Params.t, TURN.t} | {:void, TURN.t}
   def service(params, client, server, turn_state) do
@@ -29,6 +36,10 @@ defmodule Fennec.Evaluator do
     end
   end
 
+  # This function is run every time the params are returned from processing.
+  # The Params have already set message class to either :failure or :success.
+  # Return value of this function will be the message that will be send back to the client.
+  @spec on_result(:request | :indication, Params.t) :: Params.t | :void
   def on_result(:request, result) do
     if Params.get_class(result) == :failure do
       Logger.debug ~s"Request #{Params.get_method(result)} failed..."
@@ -50,6 +61,7 @@ defmodule Fennec.Evaluator do
     Params.get_class(params)
   end
 
+  # Puts :success or :failure message class and runs `on_result/2` hook 
   defp response(:void), do: :void
   defp response(params) do
     result =
