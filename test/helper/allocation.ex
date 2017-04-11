@@ -1,7 +1,5 @@
 defmodule Helper.Allocation do
 
-  alias Helper.UDP
-
   def monitor_owner(ctx) do
     Process.monitor(owner(ctx))
   end

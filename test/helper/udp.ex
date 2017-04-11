@@ -104,7 +104,7 @@ defmodule Helper.UDP do
 
   ## Communication
 
-  def setup_connection(ctx) do
+  def setup_connection(_ctx) do
     udp = connect({0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 1}, 1)
     on_exit fn -> close(udp) end
     udp
