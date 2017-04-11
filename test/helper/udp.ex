@@ -21,16 +21,6 @@ defmodule Helper.UDP do
     %Params{class: :indication, method: :binding, identifier: id} |> Format.encode()
   end
 
-  def create_permission_params(id, attrs) do
-    %Params{class: :request, method: :create_permission, identifier: id,
-            attributes: attrs}
-  end
-
-  def create_permission_request(id, attrs) do
-    create_permission_params(id, attrs)
-    |> Format.encode()
-  end
-
   def allocate_request(id) do
     allocate_request(id, [%RequestedTransport{protocol: :udp}])
   end
@@ -42,6 +32,16 @@ defmodule Helper.UDP do
 
   def allocate_params(id, attrs) do
     %Params{class: :request, method: :allocate, identifier: id,
+            attributes: attrs}
+  end
+
+  def create_permission_request(id, attrs) do
+    create_permission_params(id, attrs)
+    |> Format.encode()
+  end
+
+  def create_permission_params(id, attrs) do
+    %Params{class: :request, method: :create_permission, identifier: id,
             attributes: attrs}
   end
 
