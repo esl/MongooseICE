@@ -78,7 +78,6 @@ defmodule Fennec.Auth do
   defp should_authorize?(:request, :allocate), do: true
   defp should_authorize?(:request, :create_permission), do: true
   defp should_authorize?(:request, :refresh), do: true
-  defp should_authorize?(:indication, :send), do: true
   defp should_authorize?(_, _), do: false
 
   defp error_params(code_or_name, params, server, turn_state) do
