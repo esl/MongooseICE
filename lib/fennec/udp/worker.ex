@@ -3,7 +3,7 @@ defmodule Fennec.UDP.Worker do
   # Process handling STUN messages received over UDP
   #
   # Currently when worker receives a message which can't
-  # be decoded or don't know how to process a message
+  # be decoded or doesn't know how to process a message
   # it simply crashes.
 
   alias Fennec.UDP
@@ -18,10 +18,10 @@ defmodule Fennec.UDP.Worker do
   @timeout 5_000
 
 
-  @type state :: %{socket: :gen_udp.socket,
+  @type state :: %{socket: UDP.socket,
                    nonce_updated_at: integer,
                    client: Fennec.client_info,
-                   server: Fennec.UDP.start_options,
+                   server: UDP.server_opts,
                    turn: TURN.t
                  }
 
@@ -71,7 +71,7 @@ defmodule Fennec.UDP.Worker do
 
   def handle_info({:udp, socket, ip, port, data}, state = %{turn:
                   %TURN{allocation: %TURN.Allocation{socket: socket}}}) do
-    now = Fennec.Helper.now
+    now = Fennec.Time.system_time(:second)
     next_state =
       case get_perm_expiration_time(state, ip) do
         nil ->
@@ -91,7 +91,7 @@ defmodule Fennec.UDP.Worker do
   end
 
   def handle_info(:timeout, state) do
-    {:stop, :normal, state}
+    handle_timeout(state)
   end
 
   def handle_peer_data(:allowed, _ip, _port, _data, state) do
@@ -101,10 +101,16 @@ defmodule Fennec.UDP.Worker do
   # It exists solely to make testing easier.
   def handle_peer_data(_, _ip, _port, _data, state), do: state
 
+  # Extracted as a separate function,
+  # as it's easier to trace for side effects this way.
+  defp handle_timeout(state) do
+    {:stop, :normal, state}
+  end
+
   defp maybe_update_nonce(state) do
     %{nonce_updated_at: last_update, turn: turn_state} = state
     expire_at = last_update + Fennec.Auth.nonce_lifetime()
-    now = Fennec.Helper.now
+    now = Fennec.Time.system_time(:second)
     case expire_at < now do
       true ->
         new_turn_state = %TURN{turn_state | nonce: Fennec.Auth.gen_nonce()}
@@ -121,7 +127,8 @@ defmodule Fennec.UDP.Worker do
   defp timeout(%{turn: %TURN{allocation: nil}}), do: @timeout
   defp timeout(%{turn: %TURN{allocation: allocation}}) do
     %TURN.Allocation{expire_at: expire_at} = allocation
-    now = Fennec.Helper.now
-    max(0, expire_at - now)
+    now = Fennec.Time.system_time(:second)
+    timeout_ms = (expire_at - now) * 1000
+    max(0, timeout_ms)
   end
 end

@@ -45,7 +45,7 @@ defmodule Fennec.Evaluator.CreatePermission.Request do
   end
 
   defp create_permissions(params, _state, turn_state) do
-    expire_at = Fennec.Helper.now + @lifetime
+    expire_at = Fennec.Time.system_time(:second) + @lifetime
     peers = Params.get_attrs(params, Attribute.XORPeerAddress)
     added_pemissions =
       for peer = %Attribute.XORPeerAddress{} <- peers do

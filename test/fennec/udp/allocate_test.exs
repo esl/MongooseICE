@@ -148,4 +148,32 @@ defmodule Fennec.UDP.AllocateTest do
       assert 3 = length(attrs)
     end
   end
+
+  describe "allocation" do
+
+    import Mock
+
+    setup ctx do
+      {:ok, [udp: UDP.setup_connection(ctx)]}
+    end
+
+    test "expires after timeout", ctx do
+      ## given an existing allocation
+      client_id = 0
+      UDP.allocate(ctx.udp)
+      ## when its timeout is reached
+      mref = Helper.Allocation.monitor_owner(ctx)
+      now = Fennec.Time.system_time(:second)
+      future = now + 10_000
+      with_mock Fennec.Time, [system_time: fn(:second) -> future end] do
+        ## send indication to trigger timeout
+        :ok = UDP.send(ctx.udp, client_id, UDP.binding_indication(Params.generate_id()))
+        ## then the allocation is deleted
+        assert_receive {:DOWN, ^mref, :process, _pid, _info}, 3_000
+        assert called Fennec.Time.system_time(:second)
+      end
+    end
+
+  end
+
 end

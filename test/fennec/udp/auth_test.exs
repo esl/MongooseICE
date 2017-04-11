@@ -2,7 +2,7 @@ defmodule Fennec.UDP.AuthTest do
   use ExUnit.Case
   use Fennec.UDP.AuthTemplate
 
-  alias Jerboa.Format.Body.Attribute.{RequestedTransport, XORPeerAddress}
+  alias Jerboa.Format.Body.Attribute.{Lifetime, RequestedTransport, XORPeerAddress}
 
   test_auth_for(:allocate, [%RequestedTransport{protocol: :udp}])
 
@@ -11,4 +11,7 @@ defmodule Fennec.UDP.AuthTest do
     port: 0,
     family: :ipv4
   }])
+
+  test_auth_for(:refresh, [%Lifetime{duration: 1020}])
+
 end

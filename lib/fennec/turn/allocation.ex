@@ -11,4 +11,11 @@ defmodule Fennec.TURN.Allocation do
     owner_username: binary,
     expire_at: integer # system time in seconds
   }
+
+  @doc false
+  def default_lifetime, do: 10 * 60
+
+  @doc false
+  def maximum_lifetime, do: 10 * 60 * 6
+
 end

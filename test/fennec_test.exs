@@ -20,7 +20,7 @@ defmodule FennecTest do
 
   describe "(IPv4) Fennec over UDP Transport" do
 
-    test "send allocate request; recieve success response", %{client: alice} do
+    test "send allocate request; receive success response", %{client: alice} do
 
       ## When:
       x = Jerboa.Client.allocate(alice)
@@ -29,7 +29,7 @@ defmodule FennecTest do
       assert family(x) == "IPv4"
     end
 
-    test "send binding request; recieve success response", %{client: alice} do
+    test "send binding request; receive success response", %{client: alice} do
 
       ## When:
       x = Jerboa.Client.bind(alice)

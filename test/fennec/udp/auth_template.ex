@@ -70,7 +70,7 @@ defmodule Fennec.UDP.AuthTemplate do
           assert byte_size(realm) <= @max_value_bytes
         end
 
-        test "request with all missing attributes fails to authenticate", ctx do
+        test "with all missing attributes fails to authenticate", ctx do
           udp = ctx.udp
           id = Params.generate_id()
           req =
@@ -87,7 +87,7 @@ defmodule Fennec.UDP.AuthTemplate do
           assert %ErrorCode{code: 400} = Params.get_attr(params, ErrorCode)
         end
 
-        test "request with missing nonce attribute fails to authenticate", ctx do
+        test "with missing nonce attribute fails to authenticate", ctx do
           udp = ctx.udp
           id = Params.generate_id()
           attrs = [
@@ -108,7 +108,7 @@ defmodule Fennec.UDP.AuthTemplate do
           assert %ErrorCode{code: 400} = Params.get_attr(params, ErrorCode)
         end
 
-        test "request with missing username attributes fails to authenticate", ctx do
+        test "with missing username attributes fails to authenticate", ctx do
           udp = ctx.udp
           id = Params.generate_id()
           attrs = [
@@ -129,7 +129,7 @@ defmodule Fennec.UDP.AuthTemplate do
           assert %ErrorCode{code: 400} = Params.get_attr(params, ErrorCode)
         end
 
-        test "request with missing realm attributes fails to authenticate", ctx do
+        test "with missing realm attributes fails to authenticate", ctx do
           udp = ctx.udp
           id = Params.generate_id()
           attrs = [
@@ -149,7 +149,7 @@ defmodule Fennec.UDP.AuthTemplate do
           assert %ErrorCode{code: 400} = Params.get_attr(params, ErrorCode)
         end
 
-        test "request with invalid secret fails to authenticate", ctx do
+        test "with invalid secret fails to authenticate", ctx do
           udp = ctx.udp
           nonce_attr = get_nonce(udp)
           id = Params.generate_id()
@@ -172,7 +172,7 @@ defmodule Fennec.UDP.AuthTemplate do
           assert %ErrorCode{code: 401} = Params.get_attr(params, ErrorCode)
         end
 
-        test "request with no message integrity fails to authenticate", ctx do
+        test "with no message integrity fails to authenticate", ctx do
           udp = ctx.udp
           nonce_attr = get_nonce(udp)
           id = Params.generate_id()
@@ -195,7 +195,7 @@ defmodule Fennec.UDP.AuthTemplate do
           assert %ErrorCode{code: 401} = Params.get_attr(params, ErrorCode)
         end
 
-        test "request with invalid nonce fails to authenticate", ctx do
+        test "with invalid nonce fails to authenticate", ctx do
           udp = ctx.udp
           id = Params.generate_id()
           attrs = [
@@ -227,7 +227,7 @@ defmodule Fennec.UDP.AuthTemplate do
           assert byte_size(realm) <= @max_value_bytes
         end
 
-        test "request with valid nonce authenticate successfully", ctx do
+        test "with valid nonce authenticate successfully", ctx do
           udp = ctx.udp
           id = Params.generate_id()
           nonce_attr = get_nonce(udp)
@@ -258,7 +258,7 @@ defmodule Fennec.UDP.AuthTemplate do
               nil
           end
         )
-        test "request with different username fails to authorize", ctx do
+        test "with different username fails to authorize", ctx do
           udp = ctx.udp
           id = Params.generate_id()
           nonce_attr = get_nonce(udp)

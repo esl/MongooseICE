@@ -17,21 +17,17 @@ defmodule Fennec.Evaluator.Request do
     end
   end
 
-  defp service_(params, client, server, turn_state) do
-    mod =
-      case method(params) do
-        :binding ->
-          Evaluator.Binding.Request
-        :allocate ->
-          Evaluator.Allocate.Request
-        :create_permission ->
-          Evaluator.CreatePermission.Request
-      end
-    apply(mod, :service, [params, client, server, turn_state])
+  defp service_(p, client, server, turn_state) do
+    handler(p).service(p, client, server, turn_state)
   end
 
-  defp method(params) do
-    Params.get_method(params)
+  defp handler(params) do
+    case Params.get_method(params) do
+      :binding            -> Evaluator.Binding.Request
+      :allocate           -> Evaluator.Allocate.Request
+      :create_permission  -> Evaluator.CreatePermission.Request
+      :refresh            -> Evaluator.Refresh.Request
+    end
   end
 
   defp response(result) do
