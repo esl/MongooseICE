@@ -7,6 +7,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
   ]
 
   alias Jerboa.Format.Body.Attribute
+  alias Jerboa.Format.Body.Attribute.ErrorCode
   alias Jerboa.Params
   alias Fennec.TURN
 
@@ -74,7 +75,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
       %TURN{allocation: %TURN.Allocation{req_id: ^req_id}} ->
         {:respond, allocation_params(params, client, server, turn_state)}
       %TURN{allocation: %TURN.Allocation{}} ->
-        {:error, %Attribute.ErrorCode{code: 437}}
+        {:error, ErrorCode.new(:allocation_mismatch)}
       %TURN{allocation: nil} ->
         {:continue, params, state}
     end
@@ -85,16 +86,16 @@ defmodule Fennec.Evaluator.Allocate.Request do
       %Attribute.RequestedTransport{protocol: :udp} = t ->
         {:continue, %{params | attributes: params.attributes -- [t]}, state}
       %Attribute.RequestedTransport{} ->
-        {:error, %Attribute.ErrorCode{code: 437}}
+        {:error, ErrorCode.new(:allocation_mismatch)}
       _ ->
-        {:error, %Attribute.ErrorCode{code: 400}}
+        {:error, ErrorCode.new(:bad_request)}
       end
   end
 
   defp verify_dont_fragment(params, state) do
     case Params.get_attr(params, Attribute.DontFragment) do
       %Attribute.DontFragment{} ->
-        {:error, %Attribute.ErrorCode{code: 420}} # Currently unsupported
+        {:error, ErrorCode.new(:unknown_attribute)} # Currently unsupported
       _ ->
         {:continue, params, state}
       end
@@ -104,9 +105,9 @@ defmodule Fennec.Evaluator.Allocate.Request do
     even_port = Params.get_attr(params, Attribute.EvenPort)
     case Params.get_attr(params, Attribute.ReservationToken) do
       %Attribute.ReservationToken{} when even_port != nil ->
-        {:error, %Attribute.ErrorCode{code: 400}}
+        {:error, ErrorCode.new(:bad_request)}
       %Attribute.ReservationToken{} ->
-        {:error, %Attribute.ErrorCode{code: 420}} # Currently unsupported
+        {:error, ErrorCode.new(:unknown_attribute)} # Currently unsupported
       _ ->
         {:continue, params, state}
       end
@@ -116,9 +117,9 @@ defmodule Fennec.Evaluator.Allocate.Request do
     reservation_token = Params.get_attr(params, Attribute.ReservationToken)
     case Params.get_attr(params, Attribute.EvenPort) do
       %Attribute.EvenPort{} when reservation_token != nil ->
-        {:error, %Attribute.ErrorCode{code: 400}}
+        {:error, ErrorCode.new(:bad_request)}
       %Attribute.EvenPort{} ->
-        {:error, %Attribute.ErrorCode{code: 420}} # Currently unsupported
+        {:error, ErrorCode.new(:unknown_attribute)} # Currently unsupported
       _ ->
         {:continue, params, state}
       end

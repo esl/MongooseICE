@@ -13,5 +13,4 @@ defmodule Fennec.UDP.AuthTest do
   }])
 
   test_auth_for(:refresh, [%Lifetime{duration: 1020}])
-
 end

@@ -1,12 +1,11 @@
 defmodule Helper.UDP do
   use ExUnit.Case
+  use Helper.Macros
 
   alias Jerboa.Params
   alias Jerboa.Format
   alias Jerboa.Format.Body.Attribute.{Username, RequestedTransport,
                                       XORPeerAddress}
-
-  import Mock
 
   @recv_timeout 5_000
   @default_user "user"
@@ -33,6 +32,17 @@ defmodule Helper.UDP do
   def allocate_params(id, attrs) do
     %Params{class: :request, method: :allocate, identifier: id,
             attributes: attrs}
+  end
+
+  def send_params(id, attrs) do
+    %Params{class: :indication, method: :send, identifier: id,
+            attributes: attrs}
+  end
+
+  def send_request(id, attrs) do
+    %Params{class: :indication, method: :send, identifier: id,
+            attributes: attrs}
+    |> Format.encode()
   end
 
   def create_permission_request(id, attrs) do
@@ -73,7 +83,7 @@ defmodule Helper.UDP do
       %RequestedTransport{protocol: :udp},
       %Username{value: username}
     ])
-    resp = communicate(udp, client_id, req)
+    resp = no_auth(communicate(udp, client_id, req))
     params = Format.decode!(resp)
     %Params{class: :success,
             method: :allocate,
@@ -85,7 +95,7 @@ defmodule Helper.UDP do
     req = create_permission_request(id, peers(ips) ++ [
       %Username{value: username}
     ])
-    resp = communicate(udp, client_id, req)
+    resp = no_auth(communicate(udp, client_id, req))
     params = Format.decode!(resp)
     %Params{class: :success,
             method: :create_permission,
@@ -95,7 +105,7 @@ defmodule Helper.UDP do
   def refresh(udp, attrs \\ [], username \\ @default_user, client_id \\ 0) do
     id = Params.generate_id()
     req = refresh_request(id, attrs ++ [%Username{value: username}])
-    resp = communicate(udp, client_id, req)
+    resp = no_auth(communicate(udp, client_id, req))
     params = Format.decode!(resp)
     %Params{class: :success,
             method: :refresh,
@@ -104,8 +114,13 @@ defmodule Helper.UDP do
 
   ## Communication
 
-  def setup_connection(_ctx) do
-    udp = connect({0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 1}, 1)
+  def setup_connection(_ctx, family \\ :ipv6) do
+    addr =
+      case family do
+        :ipv4 -> {127, 0, 0, 1}
+        :ipv6 -> {0, 0, 0, 0, 0, 0, 0, 1}
+      end
+    udp = connect(addr, addr, 1)
     on_exit fn -> close(udp) end
     udp
   end
@@ -155,12 +170,8 @@ defmodule Helper.UDP do
   end
 
   def communicate(udp, client_id, req) do
-    with_mock Fennec.Auth, [:passthrough], [
-      maybe: fn(_, p, _, _) -> {:ok, p} end
-    ] do
      :ok = send(udp, client_id, req)
      recv(udp, client_id)
-   end
   end
 
   def client_port(udp, client_id) do

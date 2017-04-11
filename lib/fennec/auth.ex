@@ -36,7 +36,7 @@ defmodule Fennec.Auth do
       %TURN{allocation: nil} ->
         {:ok, params}
       _ ->
-        {:error, error_params(441, params, server, turn_state)}
+        {:error, error_params(:wrong_credentials, params, server, turn_state)}
     end
   end
 
@@ -51,14 +51,14 @@ defmodule Fennec.Auth do
       {:ok, %Params{params | attributes: params.attributes -- [n]}}
     else
       false -> # Not verified -> error code 401
-        {:error, error_params(401, params, server, turn_state)}
+        {:error, error_params(:unauthorized, params, server, turn_state)}
       %Nonce{} -> # Invalid nonce, error code 438
-        {:error, error_params(438, params, server, turn_state)}
+        {:error, error_params(:stale_nonce, params, server, turn_state)}
       nil when not signed? ->
-        {:error, error_params(401, params, server, turn_state)}
+        {:error, error_params(:unauthorized, params, server, turn_state)}
       _ when signed? -> # If message is signed and there are some attributes
                         # missing, we need to respond with error code 400
-        {:error, error_params(400, params, server, turn_state)}
+        {:error, error_params(:bad_request, params, server, turn_state)}
     end
   end
 
@@ -80,9 +80,9 @@ defmodule Fennec.Auth do
   defp should_authorize?(:request, :refresh), do: true
   defp should_authorize?(_, _), do: false
 
-  defp error_params(code, params, server, turn_state) do
+  defp error_params(code_or_name, params, server, turn_state) do
     %Params{params | attributes: [
-      %Attribute.ErrorCode{code: code},
+      Attribute.ErrorCode.new(code_or_name),
       %Attribute.Realm{value: server[:realm]},
       %Attribute.Nonce{value: turn_state.nonce}
     ]}

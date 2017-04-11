@@ -4,6 +4,8 @@ defmodule Fennec.UDP.AuthTemplate do
   defmacro __using__(_opts) do
     quote do
       import unquote __MODULE__
+      import Mock
+      use Helper.Macros
 
       @max_value_bytes 763 - 1
       @max_value_chars 128 - 1
@@ -26,7 +28,7 @@ defmodule Fennec.UDP.AuthTemplate do
         setup do
           Application.put_env(:fennec, :secret, @valid_secret)
           udp =
-            UDP.connect({0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 1}, 1)
+            UDP.connect({127,0,0,1}, {127,0,0,1}, 1)
           on_exit fn ->
             UDP.close(udp)
           end
@@ -38,6 +40,7 @@ defmodule Fennec.UDP.AuthTemplate do
               _           ->
                 quote do
                   UDP.allocate(udp, username)
+                  UDP.create_permissions(udp, [{127,0,0,1}], username)
                 end
             end
           )
@@ -50,7 +53,7 @@ defmodule Fennec.UDP.AuthTemplate do
           req =
             UDP. unquote(params_fun)(id, unquote(base_attrs))
             |> Format.encode()
-          resp = communicate(udp, 0, req)
+          resp = communicate_all(udp, 0, req)
 
           params = Format.decode!(resp)
           assert %Params{class: :failure,
@@ -77,7 +80,7 @@ defmodule Fennec.UDP.AuthTemplate do
             UDP. unquote(params_fun)(id, unquote(base_attrs))
             |> Format.encode(secret: @valid_secret, realm: "realm", username: ctx.username)
 
-          resp = communicate(udp, 0, req)
+          resp = communicate_all(udp, 0, req)
 
           params = Format.decode!(resp)
           assert %Params{class: :failure,
@@ -98,7 +101,7 @@ defmodule Fennec.UDP.AuthTemplate do
             UDP. unquote(params_fun)(id, unquote(base_attrs) ++ attrs)
             |> Format.encode(secret: @valid_secret)
 
-          resp = communicate(udp, 0, req)
+          resp = communicate_all(udp, 0, req)
 
           params = Format.decode!(resp)
           assert %Params{class: :failure,
@@ -119,7 +122,7 @@ defmodule Fennec.UDP.AuthTemplate do
             UDP. unquote(params_fun)(id, unquote(base_attrs) ++ attrs)
             |> Format.encode(secret: @valid_secret, username: ctx.username)
 
-          resp = communicate(udp, 0, req)
+          resp = communicate_all(udp, 0, req)
 
           params = Format.decode!(resp)
           assert %Params{class: :failure,
@@ -139,7 +142,7 @@ defmodule Fennec.UDP.AuthTemplate do
             UDP. unquote(params_fun)(id, unquote(base_attrs) ++ attrs)
             |> Format.encode(secret: @valid_secret, realm: "localhost")
 
-          resp = communicate(udp, 0, req)
+          resp = communicate_all(udp, 0, req)
 
           params = Format.decode!(resp)
           assert %Params{class: :failure,
@@ -162,7 +165,7 @@ defmodule Fennec.UDP.AuthTemplate do
             UDP. unquote(params_fun)(id, unquote(base_attrs) ++ attrs)
             |> Format.encode(secret: @invalid_secret)
 
-          resp = communicate(udp, 0, req)
+          resp = communicate_all(udp, 0, req)
 
           params = Format.decode!(resp)
           assert %Params{class: :failure,
@@ -185,7 +188,7 @@ defmodule Fennec.UDP.AuthTemplate do
             UDP. unquote(params_fun)(id, unquote(base_attrs) ++ attrs)
             |> Format.encode()
 
-          resp = communicate(udp, 0, req)
+          resp = communicate_all(udp, 0, req)
 
           params = Format.decode!(resp)
           assert %Params{class: :failure,
@@ -207,7 +210,7 @@ defmodule Fennec.UDP.AuthTemplate do
             UDP. unquote(params_fun)(id, unquote(base_attrs) ++ attrs)
             |> Format.encode(secret: @valid_secret)
 
-          resp = communicate(udp, 0, req)
+          resp = communicate_all(udp, 0, req)
 
           params = Format.decode!(resp)
           assert %Params{class: :failure,
@@ -240,7 +243,7 @@ defmodule Fennec.UDP.AuthTemplate do
             UDP. unquote(params_fun)(id, unquote(base_attrs) ++ attrs)
             |> Format.encode(secret: @valid_secret)
 
-          resp = communicate(udp, 0, req)
+          resp = communicate_all(udp, 0, req)
 
           params = Format.decode!(resp)
           assert %Params{class: :success,
@@ -271,7 +274,7 @@ defmodule Fennec.UDP.AuthTemplate do
             UDP. unquote(params_fun)(id, unquote(base_attrs) ++ attrs)
             |> Format.encode(secret: @valid_secret)
 
-          resp = communicate(udp, 0, req)
+          resp = communicate_all(udp, 0, req)
 
           params = Format.decode!(resp)
           assert %Params{class: :failure,
@@ -282,15 +285,10 @@ defmodule Fennec.UDP.AuthTemplate do
         end
       end
 
-      defp communicate(udp, client_id, req) do
-        :ok = UDP.send(udp, client_id, req)
-        UDP.recv(udp, client_id)
-      end
-
       defp get_nonce(udp) do
         id = Params.generate_id()
         req = UDP.allocate_request(id)
-        resp = communicate(udp, 0, req)
+        resp = communicate_all(udp, 0, req)
         Params.get_attr(Format.decode!(resp), Nonce)
       end
     end

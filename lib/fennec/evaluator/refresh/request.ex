@@ -26,7 +26,7 @@ defmodule Fennec.Evaluator.Refresh.Request do
   end
 
   defp allocation_mismatch(_params, _state, %TURN{allocation: nil}) do
-    {:error, %ErrorCode{name: :allocation_mismatch}}
+    {:error, ErrorCode.new(:allocation_mismatch)}
   end
   defp allocation_mismatch(params, state, %TURN{allocation: _}) do
     {:continue, params, state}
