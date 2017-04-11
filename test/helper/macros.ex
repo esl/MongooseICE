@@ -33,10 +33,7 @@ defmodule Helper.Macros do
     alias Jerboa.Params
     quote do
       # First, we need to mock Fennec.Evaluator.on_result to gather results
-      Mock.with_mock Fennec.Evaluator, [:passthrough], [
-        # Send the params to the test process
-        on_result: fn(class, params) -> :meck.passthrough([class, params]) end
-      ] do
+      Mock.with_mock Fennec.Evaluator, [:passthrough], [] do
         # Then we send the request
         :ok = UDP.send(unquote(udp), unquote(client_id), unquote(req))
         case Params.get_class(Jerboa.Format.decode!(unquote(req))) do

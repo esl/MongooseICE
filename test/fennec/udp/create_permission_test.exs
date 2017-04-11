@@ -108,9 +108,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
   describe "peer's data" do
     test "gets rejected without correct permission", ctx do
       udp = ctx.udp
-      with_mock Worker, [:passthrough], [
-        handle_peer_data: fn(_, _, _, _, state) -> state end
-      ] do
+      with_mock Worker, [:passthrough], [] do
         # Allocate
         allocate_res = UDP.allocate(udp)
         %XORRelayedAddress{
@@ -131,9 +129,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
 
     test "gets rejected with stale permission", ctx do
       udp = ctx.udp
-      with_mock Worker, [:passthrough], [
-        handle_peer_data: fn(_, _, _, _, state) -> state end
-      ] do
+      with_mock Worker, [:passthrough], [] do
         # Allocate
         allocate_res = UDP.allocate(udp)
         %XORRelayedAddress{
@@ -159,11 +155,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
 
     test "is accepted with valid permission", ctx do
       udp = ctx.udp
-      with_mock Worker, [:passthrough], [
-        handle_peer_data: fn(a1, a2, a3, a4, a5) ->
-          :meck.passthrough([a1, a2, a3, a4, a5])
-        end
-      ] do
+      with_mock Worker, [:passthrough], [] do
         # Allocate
         allocate_res = UDP.allocate(udp)
         %XORRelayedAddress{
