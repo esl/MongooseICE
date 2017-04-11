@@ -1,5 +1,6 @@
 defmodule Fennec.UDP.AllocateTest do
   use ExUnit.Case
+  use Helper.Macros
 
   alias Helper.UDP
   alias Jerboa.Params
@@ -26,7 +27,7 @@ defmodule Fennec.UDP.AllocateTest do
       id = Params.generate_id()
       req = UDP.allocate_request(id, [])
 
-      resp = UDP.communicate(udp, 0, req)
+      resp = no_auth(UDP.communicate(udp, 0, req))
 
       params = Format.decode!(resp)
       assert %Params{class: :failure,
@@ -45,7 +46,7 @@ defmodule Fennec.UDP.AllocateTest do
         %EvenPort{}
       ])
 
-      resp = UDP.communicate(udp, 0, req)
+      resp = no_auth(UDP.communicate(udp, 0, req))
 
       params = Format.decode!(resp)
       assert %Params{class: :failure,
@@ -65,7 +66,7 @@ defmodule Fennec.UDP.AllocateTest do
         %ReservationToken{value: "12345678"}
       ])
 
-      resp = UDP.communicate(udp, 0, req)
+      resp = no_auth(UDP.communicate(udp, 0, req))
 
       params = Format.decode!(resp)
       assert %Params{class: :failure,
@@ -83,7 +84,7 @@ defmodule Fennec.UDP.AllocateTest do
       id = Params.generate_id()
       req = UDP.allocate_request(id)
 
-      resp = UDP.communicate(udp, 0, req)
+      resp = no_auth(UDP.communicate(udp, 0, req))
 
       params = Format.decode!(resp)
       assert %Params{class: :success,
@@ -111,13 +112,13 @@ defmodule Fennec.UDP.AllocateTest do
       req1 = UDP.allocate_request(id1)
       req2 = UDP.allocate_request(id2)
 
-      resp1 = UDP.communicate(udp, 0, req1)
+      resp1 = no_auth(UDP.communicate(udp, 0, req1))
       params1 = Format.decode!(resp1)
       assert %Params{class: :success,
                      method: :allocate,
                      identifier: ^id1} = params1
 
-      resp2 = UDP.communicate(udp, 0, req2)
+      resp2 = no_auth(UDP.communicate(udp, 0, req2))
 
       params2 = Format.decode!(resp2)
       assert %Params{class: :failure,
@@ -132,13 +133,13 @@ defmodule Fennec.UDP.AllocateTest do
       id = Params.generate_id()
       req = UDP.allocate_request(id)
 
-      resp1 = UDP.communicate(udp, 0, req)
+      resp1 = no_auth(UDP.communicate(udp, 0, req))
       params1 = Format.decode!(resp1)
       assert %Params{class: :success,
                      method: :allocate,
                      identifier: ^id} = params1
 
-      resp2 = UDP.communicate(udp, 0, req)
+      resp2 = no_auth(UDP.communicate(udp, 0, req))
 
       params2 = Format.decode!(resp2)
       assert %Params{class: :success,

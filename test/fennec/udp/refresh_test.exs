@@ -35,7 +35,7 @@ defmodule Fennec.UDP.RefreshTest do
       ## when Refresh is sent
       req_id = Params.generate_id()
       req = UDP.refresh_request(req_id, [])
-      resp = UDP.communicate(ctx.udp, client_id, req)
+      resp = no_auth(UDP.communicate(ctx.udp, client_id, req))
       params = Format.decode!(resp)
       ## then the result is an allocation mismatch error
       %Params{class: :failure,

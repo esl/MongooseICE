@@ -160,7 +160,9 @@ defmodule Fennec.UDP.CreatePermissionTest do
     test "is accepted with valid permission", ctx do
       udp = ctx.udp
       with_mock Worker, [:passthrough], [
-        handle_peer_data: fn(_, _, _, _, state) -> state end
+        handle_peer_data: fn(a1, a2, a3, a4, a5) ->
+          :meck.passthrough([a1, a2, a3, a4, a5])
+        end
       ] do
         # Allocate
         allocate_res = UDP.allocate(udp)
@@ -190,7 +192,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
       id = Params.generate_id()
       req = UDP.create_permission_request(id, [])
 
-      resp = UDP.communicate(udp, 0, req)
+      resp = no_auth(UDP.communicate(udp, 0, req))
 
       params = Format.decode!(resp)
       assert %Params{class: :failure,
@@ -206,7 +208,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
       id = Params.generate_id()
       req = UDP.create_permission_request(id, [])
 
-      resp = UDP.communicate(udp, 0, req)
+      resp = no_auth(UDP.communicate(udp, 0, req))
 
       params = Format.decode!(resp)
       assert %Params{class: :failure,
@@ -225,7 +227,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
       peers = UDP.peers([{123, 123, 6, 1}])
       req = UDP.create_permission_request(id, peers)
 
-      resp = UDP.communicate(udp, 0, req)
+      resp = no_auth(UDP.communicate(udp, 0, req))
 
       params = Format.decode!(resp)
       assert %Params{class: :success,
@@ -245,7 +247,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
       ])
       req = UDP.create_permission_request(id, peers)
 
-      resp = UDP.communicate(udp, 0, req)
+      resp = no_auth(UDP.communicate(udp, 0, req))
 
       params = Format.decode!(resp)
       assert %Params{class: :success,

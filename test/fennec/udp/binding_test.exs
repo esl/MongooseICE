@@ -1,5 +1,6 @@
 defmodule Fennec.UDP.BindingTest do
   use ExUnit.Case
+  use Helper.Macros
 
   alias Helper.UDP
   alias Jerboa.Params
@@ -26,7 +27,7 @@ defmodule Fennec.UDP.BindingTest do
       id = Params.generate_id()
       req = UDP.binding_request(id)
 
-      resp = UDP.communicate(udp, 0, req)
+      resp = no_auth(UDP.communicate(udp, 0, req))
 
       params = Format.decode!(resp)
       assert %Params{class: :success,
