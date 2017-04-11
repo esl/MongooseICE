@@ -3,6 +3,7 @@ defmodule Fennec.Evaluator.CreatePermission.Request do
 
   import Fennec.Evaluator.Helper
   alias Jerboa.Format.Body.Attribute
+  alias Jerboa.Format.Body.Attribute.ErrorCode
   alias Jerboa.Params
   alias Fennec.TURN
 
@@ -30,7 +31,7 @@ defmodule Fennec.Evaluator.CreatePermission.Request do
       %TURN{allocation: %TURN.Allocation{}} ->
         {:continue, params, state}
       _ ->
-        {:error, %Attribute.ErrorCode{code: 437}}
+        {:error, ErrorCode.new(:allocation_mismatch)}
     end
   end
 
@@ -40,7 +41,7 @@ defmodule Fennec.Evaluator.CreatePermission.Request do
       %Attribute.XORPeerAddress{} ->
         {:continue, params, state}
       _ ->
-        {:error, %Attribute.ErrorCode{code: 400}}
+        {:error, ErrorCode.new(:bad_request)}
     end
   end
 

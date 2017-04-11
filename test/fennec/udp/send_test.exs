@@ -9,7 +9,7 @@ defmodule Fennec.UDP.SendTest do
                                       XORRelayedAddress}
 
   setup ctx do
-    {:ok, [udp: UDP.setup_connection(ctx)]}
+    {:ok, [udp: UDP.setup_connection(ctx, :ipv4)]}
   end
 
   describe "send request with no allocation" do

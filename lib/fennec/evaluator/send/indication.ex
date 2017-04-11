@@ -4,6 +4,7 @@ defmodule Fennec.Evaluator.Send.Indication do
   require Logger
   import Fennec.Evaluator.Helper
   alias Jerboa.Format.Body.Attribute
+  alias Jerboa.Format.Body.Attribute.ErrorCode
   alias Jerboa.Params
   alias Fennec.TURN
 
@@ -32,14 +33,14 @@ defmodule Fennec.Evaluator.Send.Indication do
       %TURN{allocation: %TURN.Allocation{}} ->
         {:continue, params, state}
       _ ->
-        {:error, %Attribute.ErrorCode{code: 437}}
+        {:error, ErrorCode.new(:allocation_mismatch)}
     end
   end
 
   defp verify_dont_fragment(params, state) do
     case Params.get_attr(params, Attribute.DontFragment) do
       %Attribute.DontFragment{} ->
-        {:error, %Attribute.ErrorCode{code: 420}} # Currently unsupported
+        {:error, ErrorCode.new(:unknown_attribute)} # Currently unsupported
       _ ->
         {:continue, params, state}
       end
@@ -51,7 +52,7 @@ defmodule Fennec.Evaluator.Send.Indication do
       [%Attribute.XORPeerAddress{}] ->
         {:continue, params, state}
       _ ->
-        {:error, %Attribute.ErrorCode{code: 400}}
+        {:error, ErrorCode.new(:bad_request)}
     end
   end
 
@@ -61,7 +62,7 @@ defmodule Fennec.Evaluator.Send.Indication do
       [%Attribute.Data{}] ->
         {:continue, params, state}
       _ ->
-        {:error, %Attribute.ErrorCode{code: 400}}
+        {:error, ErrorCode.new(:bad_request)}
     end
   end
 
@@ -69,7 +70,7 @@ defmodule Fennec.Evaluator.Send.Indication do
     peer = Params.get_attr(params, Attribute.XORPeerAddress)
     case Fennec.TURN.has_permission(turn_state, peer.address) do
       {_, false} ->
-        {:error, %Attribute.ErrorCode{code: 403}}
+        {:error, ErrorCode.new(:forbidden)}
       {_, true} ->
         {:continue, params, state}
     end

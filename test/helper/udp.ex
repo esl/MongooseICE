@@ -114,8 +114,13 @@ defmodule Helper.UDP do
 
   ## Communication
 
-  def setup_connection(_ctx) do
-    udp = connect({0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 1}, 1)
+  def setup_connection(_ctx, family \\ :ipv6) do
+    addr =
+      case family do
+        :ipv4 -> {127, 0, 0, 1}
+        :ipv6 -> {0, 0, 0, 0, 0, 0, 0, 1}
+      end
+    udp = connect(addr, addr, 1)
     on_exit fn -> close(udp) end
     udp
   end

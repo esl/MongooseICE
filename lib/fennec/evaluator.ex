@@ -42,7 +42,9 @@ defmodule Fennec.Evaluator do
   @spec on_result(:request | :indication, Params.t) :: Params.t | :void
   def on_result(:request, result) do
     if Params.get_class(result) == :failure do
-      Logger.debug ~s"Request #{Params.get_method(result)} failed..."
+      e = error(result)
+      Logger.debug ~s"Request #{Params.get_method(result)} failed due " <>
+                   ~s"to error #{e.name} (#{e.code})..."
     end
 
     result
@@ -51,7 +53,7 @@ defmodule Fennec.Evaluator do
     if Params.get_class(result) == :failure do
       e = error(result)
       Logger.debug ~s"Indication #{Params.get_method(result)} dropped due " <>
-                     "to error #{e.code}..."
+                   ~s"to error #{e.name} (#{e.code})..."
     end
 
     :void
@@ -61,7 +63,7 @@ defmodule Fennec.Evaluator do
     Params.get_class(params)
   end
 
-  # Puts :success or :failure message class and runs `on_result/2` hook 
+  # Puts :success or :failure message class and runs `on_result/2` hook
   defp response(:void), do: :void
   defp response(params) do
     result =
