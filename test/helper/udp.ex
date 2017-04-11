@@ -35,6 +35,11 @@ defmodule Helper.UDP do
             attributes: attrs}
   end
 
+  def send_params(id, attrs) do
+    %Params{class: :indication, method: :send, identifier: id,
+            attributes: attrs}
+  end
+
   def create_permission_request(id, attrs) do
     create_permission_params(id, attrs)
     |> Format.encode()

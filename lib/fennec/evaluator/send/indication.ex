@@ -21,10 +21,9 @@ defmodule Fennec.Evaluator.Send.Indication do
 
     case request_status do
       {:error, error_code} ->
-        Logger.info("Indication discarded due to error #{error_code.name}")
-        :void
+        {%Params{params | attributes: [error_code]}, turn_state}
       {:respond, :void} ->
-        :void
+        {%Params{params | attributes: []}, turn_state}
     end
   end
 
@@ -69,9 +68,9 @@ defmodule Fennec.Evaluator.Send.Indication do
   defp verify_permissions(params, state, turn_state) do
     peer = Params.get_attr(params, Attribute.XORPeerAddress)
     case Fennec.TURN.has_permission(turn_state, peer.address) do
-      false ->
+      {_, false} ->
         {:error, %Attribute.ErrorCode{code: 403}}
-      true ->
+      {_, true} ->
         {:continue, params, state}
     end
   end
