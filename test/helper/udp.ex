@@ -46,9 +46,13 @@ defmodule Helper.UDP do
   end
 
   def refresh_request(id, attrs) do
+    refresh_params(id, attrs)
+    |> Format.encode()
+  end
+
+  def refresh_params(id, attrs) do
     %Params{class: :request, method: :refresh, identifier: id,
             attributes: attrs}
-    |> Format.encode()
   end
 
   def peers(peers) do
