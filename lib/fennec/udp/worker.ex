@@ -95,7 +95,7 @@ defmodule Fennec.UDP.Worker do
   def handle_peer_data(:allowed, _ip, _port, _data, state) do
     state
   end
-  # This function clouse is for (not) handling rejected peer's data.
+  # This function clause is for (not) handling rejected peer's data.
   # It exists solely to make testing easier.
   def handle_peer_data(_, _ip, _port, _data, state), do: state
 
