@@ -118,10 +118,6 @@ defmodule Fennec.UDP.Worker do
     end
   end
 
-  defp get_perm_expiration_time(state, ip) do
-    Map.get(state.turn.permissions, ip)
-  end
-
   defp timeout(%{turn: %TURN{allocation: nil}}), do: @timeout
   defp timeout(%{turn: %TURN{allocation: allocation}}) do
     %TURN.Allocation{expire_at: expire_at} = allocation
