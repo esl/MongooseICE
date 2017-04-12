@@ -8,6 +8,8 @@ defmodule Fennec.UDP.SendTest do
   alias Jerboa.Format.Body.Attribute.{ErrorCode, XORPeerAddress, Data,
                                       XORRelayedAddress}
 
+  @peer_addr {127, 0, 0, 1}
+
   setup ctx do
     {:ok, [udp: UDP.setup_connection(ctx, :ipv4)]}
   end
@@ -17,7 +19,7 @@ defmodule Fennec.UDP.SendTest do
       udp = ctx.udp
 
       id = Params.generate_id()
-      peer = XORPeerAddress.new({127, 0, 0, 1}, 12345)
+      peer = XORPeerAddress.new(@peer_addr, 12345)
       data = %Data{content: ""}
       req = UDP.send_indication(id, [peer, data])
 
@@ -42,7 +44,7 @@ defmodule Fennec.UDP.SendTest do
       udp = ctx.udp
 
       id = Params.generate_id()
-      peer = XORPeerAddress.new({127, 0, 0, 1}, 12345)
+      peer = XORPeerAddress.new(@peer_addr, 12345)
       data = %Data{content: ""}
       req = UDP.send_indication(id, [peer, data])
 
@@ -76,7 +78,7 @@ defmodule Fennec.UDP.SendTest do
       udp = ctx.udp
 
       id = Params.generate_id()
-      peer = XORPeerAddress.new({127, 0, 0, 1}, 12345)
+      peer = XORPeerAddress.new(@peer_addr, 12345)
       req = UDP.send_indication(id, [peer])
 
       resp = no_auth(communicate_all(udp, 0, req))
@@ -94,7 +96,7 @@ defmodule Fennec.UDP.SendTest do
     setup ctx do
       allocate_params = UDP.allocate(ctx.udp)
 
-      UDP.create_permissions(ctx.udp, [{127, 0, 0, 1}])
+      UDP.create_permissions(ctx.udp, [@peer_addr])
       {:ok, [relay_sock: Params.get_attr(allocate_params, XORRelayedAddress)]}
     end
 
@@ -104,7 +106,7 @@ defmodule Fennec.UDP.SendTest do
       {:ok, port} = :inet.port(sock)
 
       id = Params.generate_id()
-      peer = XORPeerAddress.new({127, 0, 0, 1}, port)
+      peer = XORPeerAddress.new(@peer_addr, port)
       data = %Data{content: "some content"}
       req = UDP.send_indication(id, [peer, data])
 

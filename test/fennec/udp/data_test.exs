@@ -8,6 +8,8 @@ defmodule Fennec.UDP.DataTest do
 
   import Mock
 
+  @peer_addr {127, 0, 0, 1}
+
   setup ctx do
     {:ok, [udp: UDP.setup_connection(ctx, :ipv4)]}
   end
@@ -38,7 +40,7 @@ defmodule Fennec.UDP.DataTest do
         ## then the datagram gets silently discarded
         ## we can't use `assert called ...` as we want to ignore `state`
         receive do
-          {:no_permission, {127, 0, 0, 1}, ^peer_port, ^data} ->
+          {:no_permission, @peer_addr, ^peer_port, ^data} ->
             :ok
           after 3000 ->
             flunk("handle_peer_data timeout")
