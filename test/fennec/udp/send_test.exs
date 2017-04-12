@@ -19,7 +19,7 @@ defmodule Fennec.UDP.SendTest do
       id = Params.generate_id()
       peer = XORPeerAddress.new({127, 0, 0, 1}, 12345)
       data = %Data{content: ""}
-      req = UDP.send_request(id, [peer, data])
+      req = UDP.send_indication(id, [peer, data])
 
       resp = no_auth(communicate_all(udp, 0, req))
 
@@ -44,7 +44,7 @@ defmodule Fennec.UDP.SendTest do
       id = Params.generate_id()
       peer = XORPeerAddress.new({127, 0, 0, 1}, 12345)
       data = %Data{content: ""}
-      req = UDP.send_request(id, [peer, data])
+      req = UDP.send_indication(id, [peer, data])
 
       resp = no_auth(communicate_all(udp, 0, req))
 
@@ -60,7 +60,7 @@ defmodule Fennec.UDP.SendTest do
       udp = ctx.udp
 
       id = Params.generate_id()
-      req = UDP.send_request(id, [%Data{content: ""}])
+      req = UDP.send_indication(id, [%Data{content: ""}])
 
       resp = no_auth(communicate_all(udp, 0, req))
 
@@ -77,7 +77,7 @@ defmodule Fennec.UDP.SendTest do
 
       id = Params.generate_id()
       peer = XORPeerAddress.new({127, 0, 0, 1}, 12345)
-      req = UDP.send_request(id, [peer])
+      req = UDP.send_indication(id, [peer])
 
       resp = no_auth(communicate_all(udp, 0, req))
 
@@ -106,7 +106,7 @@ defmodule Fennec.UDP.SendTest do
       id = Params.generate_id()
       peer = XORPeerAddress.new({127, 0, 0, 1}, port)
       data = %Data{content: "some content"}
-      req = UDP.send_request(id, [peer, data])
+      req = UDP.send_indication(id, [peer, data])
 
       resp = no_auth(communicate_all(udp, 0, req))
 
