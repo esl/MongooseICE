@@ -14,7 +14,7 @@ defmodule Fennec.UDP.DataTest do
     {:ok, [udp: UDP.setup_connection(ctx, :ipv4)]}
   end
 
-  describe "incoming datagram" do
+  describe "incoming peer datagram" do
 
     setup ctx do
       params = UDP.allocate(ctx.udp)
@@ -50,7 +50,7 @@ defmodule Fennec.UDP.DataTest do
 
   end
 
-  describe "incoming datagram with peer permission" do
+  describe "incoming peer datagram with permission" do
 
     setup ctx do
       params = UDP.allocate(ctx.udp)
