@@ -4,7 +4,8 @@ defmodule Fennec.UDP.DataTest do
 
   alias Helper.UDP
   alias Jerboa.Params
-  alias Jerboa.Format.Body.Attribute.XORRelayedAddress
+  alias Jerboa.Format
+  alias Jerboa.Format.Body.Attribute.{Data, XORPeerAddress, XORRelayedAddress}
 
   import Mock
 
@@ -58,39 +59,24 @@ defmodule Fennec.UDP.DataTest do
       {:ok, [relay_sock: Params.get_attr(params, XORRelayedAddress)]}
     end
 
-    test "is relayed over a channel", _ctx do
-      flunk "not implemented yet"
-    end
-
     test "is relayed as a Data indication", ctx do
-      ## The Data indication MUST contain both:
-      ##
-      ## - an XOR-PEER-ADDRESS - source transport address of the datagram
-      ## - a DATA attribute - 'data octets' field from the datagram
-      ##
-      ## The client SHOULD also check that the XOR-PEER-ADDRESS attribute value
-      ## contains an IP address with which the client believes
-      ## there is an active permission.
-
-      ## given relay address for a peer
+      ## given a relay address for a peer
       %XORRelayedAddress{address: relay_addr, port: relay_port} = ctx.relay_sock
       {:ok, peer} = :gen_udp.open(0, [{:active, :false}, :binary])
       {:ok, peer_port} = :inet.port(peer)
-
       ## when the peer sends a datagram
       data = "arbitrary data"
       :ok = :gen_udp.send(peer, relay_addr, relay_port, data)
-
       ## then the datagram payload gets delivered as a Data indication
       raw = UDP.recv(ctx.udp, _client_id = 0)
       params = Format.decode!(raw)
       assert %Params{class: :indication,
                      method: :data,
                      attributes: attrs} = params
-      IO.puts("")
-      IO.inspect(params, label: "data params")
-      IO.puts("")
-      flunk "not implemented yet"
+      assert %XORPeerAddress{address: @peer_addr,
+                             port: peer_port,
+                             family: :ipv4} == Params.get_attr(params, XORPeerAddress)
+      assert %Data{content: data} == Params.get_attr(params, Data)
     end
 
   end
