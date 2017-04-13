@@ -17,7 +17,6 @@ defmodule Fennec.UDP.Worker do
   # should be configurable
   @timeout 5_000
 
-
   @type state :: %{socket: UDP.socket,
                    nonce_updated_at: integer,
                    client: Fennec.client_info,
@@ -92,10 +91,22 @@ defmodule Fennec.UDP.Worker do
     handle_timeout(state)
   end
 
-  def handle_peer_data(:allowed, _ip, _port, _data, state) do
+  defp data_params(ip, port, data) do
+    alias Jerboa.Params, as: P
+    alias Jerboa.Format.Body.Attribute.{Data, XORPeerAddress}
+    P.new()
+    |> P.put_class(:indication)
+    |> P.put_method(:data)
+    |> P.put_attr(%Data{content: data})
+    |> P.put_attr(XORPeerAddress.new(ip, port))
+  end
+
+  def handle_peer_data(:allowed, ip, port, data, state) do
+    :ok = :gen_udp.send(state.socket, state.client.ip, state.client.port,
+                        Jerboa.Format.encode(data_params(ip, port, data)))
     state
   end
-  # This function clouse is for (not) handling rejected peer's data.
+  # This function clause is for (not) handling rejected peer's data.
   # It exists solely to make testing easier.
   def handle_peer_data(_, _ip, _port, _data, state), do: state
 
@@ -116,10 +127,6 @@ defmodule Fennec.UDP.Worker do
       false ->
         state
     end
-  end
-
-  defp get_perm_expiration_time(state, ip) do
-    Map.get(state.turn.permissions, ip)
   end
 
   defp timeout(%{turn: %TURN{allocation: nil}}), do: @timeout
