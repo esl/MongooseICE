@@ -38,7 +38,7 @@ end
 - [x] Allocate
 - [x] Refresh
 - [x] Send
-- [ ] Data
+- [x] Data
 - [x] CreatePermission
 - [ ] ChannelBind
 
