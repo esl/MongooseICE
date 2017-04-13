@@ -94,16 +94,11 @@ defmodule Fennec.UDP.Worker do
   defp data_params(ip, port, data) do
     alias Jerboa.Params, as: P
     alias Jerboa.Format.Body.Attribute.{Data, XORPeerAddress}
-    import Fennec.Evaluator.Helper, only: [family: 1]
     P.new()
     |> P.put_class(:indication)
     |> P.put_method(:data)
     |> P.put_attr(%Data{content: data})
-    |> P.put_attr(%XORPeerAddress{
-      address: ip,
-      port: port,
-      family: family(ip)
-    })
+    |> P.put_attr(XORPeerAddress.new(ip, port))
   end
 
   def handle_peer_data(:allowed, ip, port, data, state) do
