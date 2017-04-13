@@ -59,8 +59,7 @@ defmodule Fennec.UDP.DataTest do
       raw = UDP.recv(ctx.udp, _client_id = 0)
       params = Format.decode!(raw)
       assert %Params{class: :indication,
-                     method: :data,
-                     attributes: attrs} = params
+                     method: :data} = params
       assert %XORPeerAddress{address: @peer_addr,
                              port: peer_port,
                              family: :ipv4} == Params.get_attr(params, XORPeerAddress)
