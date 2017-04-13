@@ -91,16 +91,6 @@ defmodule Fennec.UDP.Worker do
     handle_timeout(state)
   end
 
-  defp data_params(ip, port, data) do
-    alias Jerboa.Params, as: P
-    alias Jerboa.Format.Body.Attribute.{Data, XORPeerAddress}
-    P.new()
-    |> P.put_class(:indication)
-    |> P.put_method(:data)
-    |> P.put_attr(%Data{content: data})
-    |> P.put_attr(XORPeerAddress.new(ip, port))
-  end
-
   def handle_peer_data(:allowed, ip, port, data, state) do
     :ok = :gen_udp.send(state.socket, state.client.ip, state.client.port,
                         Jerboa.Format.encode(data_params(ip, port, data)))
@@ -135,5 +125,15 @@ defmodule Fennec.UDP.Worker do
     now = Fennec.Time.system_time(:second)
     timeout_ms = (expire_at - now) * 1000
     max(0, timeout_ms)
+  end
+
+  defp data_params(ip, port, data) do
+    alias Jerboa.Params, as: P
+    alias Jerboa.Format.Body.Attribute.{Data, XORPeerAddress}
+    P.new()
+    |> P.put_class(:indication)
+    |> P.put_method(:data)
+    |> P.put_attr(%Data{content: data})
+    |> P.put_attr(XORPeerAddress.new(ip, port))
   end
 end
