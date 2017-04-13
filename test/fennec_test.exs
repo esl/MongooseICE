@@ -1,16 +1,20 @@
 defmodule FennecTest do
   use ExUnit.Case, async: true
 
+  alias Helper.PortMaster
+
   @moduletag :system
+  @server_addr {127, 0, 0, 1}
 
   setup do
 
     ## Given:
     import Fennec.Test.Helper.Server, only: [configuration: 1]
-    %{address: a, port: p} = configuration("Fennec (local)")
-    Fennec.UDP.start_link(ip: a, port: p)
+    port = PortMaster.checkout_port(:server)
+    Fennec.UDP.start_link(ip: @server_addr, port: port)
     Application.put_env(:fennec, :secret, "abc")
-    {:ok, alice} = Jerboa.Client.start(server: {a, p}, username: "alice", secret: "abc")
+    {:ok, alice} = Jerboa.Client.start(server: {@server_addr, port},
+                                       username: "alice", secret: "abc")
     on_exit fn ->
       :ok = Jerboa.Client.stop(alice)
     end
