@@ -27,25 +27,13 @@ defmodule Fennec.UDP.DataTest do
       %XORRelayedAddress{address: relay_addr, port: relay_port} = ctx.relay_sock
       {:ok, peer} = :gen_udp.open(0, [{:active, :false}, :binary])
       {:ok, peer_port} = :inet.port(peer)
-      self_ = self()
-      with_mock Fennec.UDP.Worker, [:passthrough], [
-        handle_peer_data: fn (:no_permission, ip, port, data, state) ->
-          ## we can't use `assert called ...` as we want to ignore `state`
-          send self_, {:no_permission, ip, port, data}
-          :meck.passthrough([:no_permission, ip, port, data, state])
-        end
-      ] do
+      with_mock Fennec.UDP.Worker, [:passthrough], [] do
         ## when the peer sends a datagram
         data = "arbitrary data"
         :ok = :gen_udp.send(peer, relay_addr, relay_port, data)
         ## then the datagram gets silently discarded
-        ## we can't use `assert called ...` as we want to ignore `state`
-        receive do
-          {:no_permission, @peer_addr, ^peer_port, ^data} ->
-            :ok
-          after 3000 ->
-            flunk("handle_peer_data timeout")
-          end
+        assert eventually called \
+          Fennec.UDP.Worker.handle_peer_data(:no_permission, @peer_addr, peer_port, data, :_)
       end
     end
 
