@@ -17,7 +17,6 @@ defmodule Fennec.UDP.Worker do
   # should be configurable
   @timeout 5_000
 
-
   @type state :: %{socket: UDP.socket,
                    nonce_updated_at: integer,
                    client: Fennec.client_info,
@@ -92,7 +91,24 @@ defmodule Fennec.UDP.Worker do
     handle_timeout(state)
   end
 
-  def handle_peer_data(:allowed, _ip, _port, _data, state) do
+  defp data_params(ip, port, data) do
+    alias Jerboa.Params, as: P
+    alias Jerboa.Format.Body.Attribute.{Data, XORPeerAddress}
+    import Fennec.Evaluator.Helper, only: [family: 1]
+    P.new()
+    |> P.put_class(:indication)
+    |> P.put_method(:data)
+    |> P.put_attr(%Data{content: data})
+    |> P.put_attr(%XORPeerAddress{
+      address: ip,
+      port: port,
+      family: family(ip)
+    })
+  end
+
+  def handle_peer_data(:allowed, ip, port, data, state) do
+    :ok = :gen_udp.send(state.socket, state.client.ip, state.client.port,
+                        Jerboa.Format.encode(data_params(ip, port, data)))
     state
   end
   # This function clause is for (not) handling rejected peer's data.
