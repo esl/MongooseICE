@@ -9,7 +9,7 @@ defmodule Fennec.Evaluator.Send.Indication do
   alias Fennec.TURN
 
   @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
-    :: :void
+    :: {Params.t, TURN.t}
   def service(params, _client, _server, turn_state) do
     request_status =
       {:continue, params, %{}}
