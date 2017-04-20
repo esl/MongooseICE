@@ -15,13 +15,7 @@ defmodule Fennec.UDP.AllocateTest do
   describe "allocate request" do
 
     setup do
-      udp =
-        UDP.connect({0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 1}, 1)
-      on_exit fn ->
-        UDP.close(udp)
-      end
-
-      {:ok, [udp: udp]}
+      {:ok, [udp: UDP.setup_connection([], :ipv6)]}
     end
 
     test "fails without RequestedTransport attribute", ctx do
