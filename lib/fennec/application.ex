@@ -3,8 +3,6 @@ defmodule Fennec.Application do
 
   use Application
 
-  import Supervisor.Spec
-
   def start(_type, _args) do
     opts = [strategy: :one_for_one, name: Fennec.Supervisor]
     Supervisor.start_link(servers(), opts)
@@ -17,9 +15,7 @@ defmodule Fennec.Application do
   end
 
   defp make_server({type, config}) do
-    type
-    |> server_mod()
-    |> supervisor([config])
+    server_mod(type).child_spec(config)
   end
 
   defp server_mod(:udp), do: Fennec.UDP
