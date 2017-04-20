@@ -10,6 +10,8 @@ defmodule Fennec.UDP.AllocateTest do
                                       RequestedTransport, EvenPort,
                                       ReservationToken}
 
+  require Integer
+
   describe "allocate request" do
 
     setup do
@@ -148,6 +150,26 @@ defmodule Fennec.UDP.AllocateTest do
                      attributes: attrs} = params2
       assert 3 = length(attrs)
     end
+
+    test "with EVEN-PORT attribute allocates an even port", ctx do
+      id = Params.generate_id()
+      req = UDP.allocate_request(id, [
+        %RequestedTransport{protocol: :udp},
+        %EvenPort{}
+      ])
+
+      resp = no_auth(UDP.communicate(ctx.udp, 0, req))
+      params = Format.decode!(resp)
+      IO.puts("")
+      IO.inspect(params, label: "params")
+      IO.puts("")
+      assert %Params{class: :success,
+                     method: :allocate,
+                     identifier: ^id} = params
+      %XORRelayedAddress{port: relay_port} = Params.get_attr(params, XORRelayedAddress)
+      assert Integer.is_even(relay_port)
+    end
+
   end
 
   describe "allocation" do
