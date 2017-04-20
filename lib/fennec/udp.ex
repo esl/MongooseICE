@@ -11,8 +11,8 @@ defmodule Fennec.UDP do
   ...or hook it up to your supervision tree:
 
       children = [
-        supervisor(Fennec.UDP, [[port: 3478]]),
-        supervisor(Fennec.UDP, [[port: 1234]]),
+        Fennec.UDP.child_spec([port: 3478]),
+        Fennec.UDP.child_spec([port: 1234]),
         ...
       ]
 
@@ -27,7 +27,7 @@ defmodule Fennec.UDP do
   * `:ip` - the address of an interface which server should listen on
   * `:relay_ip` - the address of an interface which relay should listen on
   * `:realm` - public name of the server used as context of authorization.
-  Does not have to be same as the server's hostname, yet in very basic configuration it may be. 
+  Does not have to be same as the server's hostname, yet in very basic configuration it may be.
 
   You may start multiple UDP servers at a time.
   """
@@ -47,10 +47,8 @@ defmodule Fennec.UDP do
   Accepts the same options as `start_link/1`.
   """
   @spec start(server_opts) :: Supervisor.on_start_child
-  def start(opts) do
-    opts = normalize_opts(opts)
-    name = base_name(opts[:port])
-    child = Supervisor.Spec.supervisor(Fennec.UDP.Supervisor, [opts], id: name)
+  def start(opts \\ @default_opts) do
+    child = child_spec(opts)
     Supervisor.start_child(Fennec.Supervisor, child)
   end
 
@@ -79,9 +77,20 @@ defmodule Fennec.UDP do
   Links the server to the calling process.
   """
   @spec start_link(server_opts) :: Supervisor.on_start
-  def start_link(opts) do
+  def start_link(opts \\ @default_opts) do
     opts = normalize_opts(opts)
     Fennec.UDP.Supervisor.start_link(opts)
+  end
+
+  @doc """
+  Returns child specification of UDP server which can be hooked
+  up into supervision tree
+  """
+  @spec child_spec(server_opts) :: Supervisor.Spec.spec
+  def child_spec(opts) do
+    opts = normalize_opts(opts)
+    name = base_name(opts[:port])
+    Supervisor.Spec.supervisor(Fennec.UDP.Supervisor, [opts], id: name)
   end
 
   defp normalize_opts(opts) do

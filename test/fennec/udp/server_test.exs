@@ -11,4 +11,24 @@ defmodule Fennec.UDP.ServerTest do
     assert :ok = Fennec.UDP.stop(port)
     assert [] = Supervisor.which_children(Fennec.Supervisor)
   end
+
+  test "start/1 allows to start multiple servers on different ports" do
+    port1 = 1234
+    port2 = 4321
+
+    assert {:ok, _} = Fennec.UDP.start(port: port1)
+    assert {:ok, _} = Fennec.UDP.start(port: port2)
+
+    Fennec.UDP.stop port1
+    Fennec.UDP.stop port2
+  end
+
+  test "start/1 does not allow to start multiple servers on the same port" do
+    port = 3478
+
+    assert {:ok, _} = Fennec.UDP.start(port: port)
+    assert {:error, {:already_started, _}} = Fennec.UDP.start(port: port)
+
+    Fennec.UDP.stop(port)
+  end
 end
