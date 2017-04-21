@@ -34,25 +34,6 @@ defmodule Fennec.UDP.AllocateTest do
       assert %ErrorCode{code: 400} = error
     end
 
-    test "fails with unknown attribute", ctx do
-      udp = ctx.udp
-      id = Params.generate_id()
-      req = UDP.allocate_request(id, [
-        %RequestedTransport{protocol: :udp},
-        %EvenPort{}
-      ])
-
-      resp = no_auth(UDP.communicate(udp, 0, req))
-
-      params = Format.decode!(resp)
-      assert %Params{class: :failure,
-                     method: :allocate,
-                     identifier: ^id,
-                     attributes: [error]} = params
-
-      assert %ErrorCode{code: 420} = error
-    end
-
     test "fails if EvenPort and ReservationToken are supplied", ctx do
       udp = ctx.udp
       id = Params.generate_id()
