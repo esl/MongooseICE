@@ -57,6 +57,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
 
   defp allocate(params, _state, client, server, turn_state) do
     addr = server[:relay_ip]
+    ## TODO: {:active, true} is not an option for a production system!
     {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
     allocation = %Fennec.TURN.Allocation{
       socket: socket,
