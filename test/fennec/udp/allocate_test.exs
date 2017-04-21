@@ -126,23 +126,29 @@ defmodule Fennec.UDP.AllocateTest do
       assert 3 = length(attrs)
     end
 
-    test "with EVEN-PORT attribute allocates an even port", ctx do
-      id = Params.generate_id()
-      req = UDP.allocate_request(id, [
-        %RequestedTransport{protocol: :udp},
-        %EvenPort{}
-      ])
+  end
 
-      resp = no_auth(UDP.communicate(ctx.udp, 0, req))
-      params = Format.decode!(resp)
-      IO.puts("")
-      IO.inspect(params, label: "params")
-      IO.puts("")
-      assert %Params{class: :success,
-                     method: :allocate,
-                     identifier: ^id} = params
-      %XORRelayedAddress{port: relay_port} = Params.get_attr(params, XORRelayedAddress)
-      assert Integer.is_even(relay_port)
+  describe "allocate request with EVEN-PORT attribute" do
+
+    test "allocates an even port" do
+      addr = {127, 0, 0, 1}
+      for _ <- 1..100 do
+        udp = UDP.connect(addr, addr, 1)
+        id = Params.generate_id()
+        req = UDP.allocate_request(id, [
+          %RequestedTransport{protocol: :udp},
+          %EvenPort{}
+        ])
+
+        resp = no_auth(UDP.communicate(udp, 0, req))
+        params = Format.decode!(resp)
+        assert %Params{class: :success,
+                       method: :allocate,
+                       identifier: ^id} = params
+        %XORRelayedAddress{port: relay_port} = Params.get_attr(params, XORRelayedAddress)
+        assert Integer.is_even(relay_port)
+        UDP.close(udp)
+      end
     end
 
   end
