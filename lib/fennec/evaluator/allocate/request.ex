@@ -13,6 +13,8 @@ defmodule Fennec.Evaluator.Allocate.Request do
 
   require Integer
 
+  @even_port_max_retries 100
+
   @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
     :: {Params.t, TURN.t}
   def service(params, client, server, turn_state) do
@@ -70,15 +72,17 @@ defmodule Fennec.Evaluator.Allocate.Request do
     {:respond, allocation_params(params, client, server, new_turn_state)}
   end
 
-  defp create_relay(state, server) do
+  defp create_relay( state,  server, retries \\ @even_port_max_retries)
+  defp create_relay(_state, _server, retries)
+    when retries < 0, do: {:error, :even_port_max_retries}
+  defp create_relay( state,  server, retries) do
     addr = server[:relay_ip]
     ## TODO: {:active, true} is not an option for a production system!
     {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
     {:ok, {_, port}} = :inet.sockname(socket)
     if state.even_port != nil and not Integer.is_even(port) do
-      ## TODO: should we introduce some limit on the number of retries? probably...
       :gen_udp.close(socket)
-      create_relay(state, server)
+      create_relay(state, server, retries - 1)
     else
       {:ok, socket}
     end
