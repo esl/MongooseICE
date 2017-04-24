@@ -10,16 +10,12 @@ defmodule Fennec.UDP.AllocateTest do
                                       RequestedTransport, EvenPort,
                                       ReservationToken}
 
+  require Integer
+
   describe "allocate request" do
 
     setup do
-      udp =
-        UDP.connect({0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 1}, 1)
-      on_exit fn ->
-        UDP.close(udp)
-      end
-
-      {:ok, [udp: udp]}
+      {:ok, [udp: UDP.setup_connection([], :ipv6)]}
     end
 
     test "fails without RequestedTransport attribute", ctx do
@@ -36,25 +32,6 @@ defmodule Fennec.UDP.AllocateTest do
                      attributes: [error]} = params
 
       assert %ErrorCode{code: 400} = error
-    end
-
-    test "fails with unknown attribute", ctx do
-      udp = ctx.udp
-      id = Params.generate_id()
-      req = UDP.allocate_request(id, [
-        %RequestedTransport{protocol: :udp},
-        %EvenPort{}
-      ])
-
-      resp = no_auth(UDP.communicate(udp, 0, req))
-
-      params = Format.decode!(resp)
-      assert %Params{class: :failure,
-                     method: :allocate,
-                     identifier: ^id,
-                     attributes: [error]} = params
-
-      assert %ErrorCode{code: 420} = error
     end
 
     test "fails if EvenPort and ReservationToken are supplied", ctx do
@@ -148,6 +125,32 @@ defmodule Fennec.UDP.AllocateTest do
                      attributes: attrs} = params2
       assert 3 = length(attrs)
     end
+
+  end
+
+  describe "allocate request with EVEN-PORT attribute" do
+
+    test "allocates an even port" do
+      addr = {127, 0, 0, 1}
+      for _ <- 1..100 do
+        udp = UDP.connect(addr, addr, 1)
+        id = Params.generate_id()
+        req = UDP.allocate_request(id, [
+          %RequestedTransport{protocol: :udp},
+          %EvenPort{}
+        ])
+
+        resp = no_auth(UDP.communicate(udp, 0, req))
+        params = Format.decode!(resp)
+        assert %Params{class: :success,
+                       method: :allocate,
+                       identifier: ^id} = params
+        %XORRelayedAddress{port: relay_port} = Params.get_attr(params, XORRelayedAddress)
+        assert Integer.is_even(relay_port)
+        UDP.close(udp)
+      end
+    end
+
   end
 
   describe "allocation" do

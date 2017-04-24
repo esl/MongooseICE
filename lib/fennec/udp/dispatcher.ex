@@ -11,8 +11,8 @@ defmodule Fennec.UDP.Dispatcher do
     Registry.start_link(:unique, name)
   end
 
-  # Dispatches data to worker associated with given
-  # IP and port number
+  # Dispatches data to worker associated with client's
+  # server-reflexive IP and port number
   @spec dispatch(atom, atom, UDP.socket, Fennec.ip, Fennec.portn, binary) :: term
   def dispatch(dispatcher, worker_sup, socket, ip, port, data) do
     case find_or_start_worker(dispatcher, worker_sup, socket, ip, port) do

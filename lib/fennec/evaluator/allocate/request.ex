@@ -11,11 +11,15 @@ defmodule Fennec.Evaluator.Allocate.Request do
   alias Jerboa.Params
   alias Fennec.TURN
 
+  require Integer
+
+  @even_port_max_retries 100
+
   @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
     :: {Params.t, TURN.t}
   def service(params, client, server, turn_state) do
     request_status =
-      {:continue, params, %{}}
+      {:continue, params, %{even_port: nil}}
       |> maybe(&verify_existing_allocation/5, [client, server, turn_state])
       |> maybe(&verify_requested_transport/2)
       |> maybe(&verify_dont_fragment/2)
@@ -55,9 +59,8 @@ defmodule Fennec.Evaluator.Allocate.Request do
     {%{params | attributes: attrs}, turn_state}
   end
 
-  defp allocate(params, _state, client, server, turn_state) do
-    addr = server[:relay_ip]
-    {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
+  defp allocate(params, state, client, server, turn_state) do
+    {:ok, socket} = create_relay(state, server)
     allocation = %Fennec.TURN.Allocation{
       socket: socket,
       expire_at: Fennec.Time.system_time(:second) + TURN.Allocation.default_lifetime(),
@@ -67,6 +70,22 @@ defmodule Fennec.Evaluator.Allocate.Request do
 
     new_turn_state = %{turn_state | allocation: allocation}
     {:respond, allocation_params(params, client, server, new_turn_state)}
+  end
+
+  defp create_relay( state,  server, retries \\ @even_port_max_retries)
+  defp create_relay(_state, _server, retries)
+    when retries < 0, do: {:error, :even_port_max_retries}
+  defp create_relay( state,  server, retries) do
+    addr = server[:relay_ip]
+    ## TODO: {:active, true} is not an option for a production system!
+    {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
+    {:ok, {_, port}} = :inet.sockname(socket)
+    if state.even_port != nil and not Integer.is_even(port) do
+      :gen_udp.close(socket)
+      create_relay(state, server, retries - 1)
+    else
+      {:ok, socket}
+    end
   end
 
   defp verify_existing_allocation(params, state, client, server, turn_state) do
@@ -118,11 +137,11 @@ defmodule Fennec.Evaluator.Allocate.Request do
     case Params.get_attr(params, Attribute.EvenPort) do
       %Attribute.EvenPort{} when reservation_token != nil ->
         {:error, ErrorCode.new(:bad_request)}
-      %Attribute.EvenPort{} ->
-        {:error, ErrorCode.new(:unknown_attribute)} # Currently unsupported
+      %Attribute.EvenPort{} = ep ->
+        {:continue, params, %{state | even_port: ep}}
       _ ->
         {:continue, params, state}
-      end
+    end
   end
 
   defp owner_username(params) do
