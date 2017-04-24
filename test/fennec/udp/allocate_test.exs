@@ -151,6 +151,29 @@ defmodule Fennec.UDP.AllocateTest do
       end
     end
 
+    test "reserves a higher port if requested" do
+      ## given a TURN server
+      addr = {127, 0, 0, 1}
+      ## when allocating a UDP relay address with an even port
+      ## and reserving the next port
+      udp1 = UDP.connect(addr, addr, 1)
+      on_exit fn -> UDP.close(udp1) end
+      params1 = UDP.allocate(udp1, attributes: [
+        %RequestedTransport{protocol: :udp},
+        %EvenPort{reserved?: true}
+      ])
+      %XORRelayedAddress{port: relay_port1} = Params.get_attr(params1, XORRelayedAddress)
+      reservation_token = Params.get_attr(params1, ReservationToken)
+      ## then the next allocation with a RESERVATION-TOKEN
+      ## allocates a relay address with the reserved port
+      udp2 = UDP.connect(addr, addr, 1)
+      on_exit fn -> UDP.close(udp2) end
+      params2 = UDP.allocate(udp2, attributes: [reservation_token])
+      %XORRelayedAddress{port: relay_port2} = Params.get_attr(params1, XORRelayedAddress)
+      assert Integer.is_even(relay_port1)
+      assert relay_port2 == relay_port1 + 1
+    end
+
   end
 
   describe "allocation" do
