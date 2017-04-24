@@ -13,13 +13,13 @@ defmodule Fennec.Evaluator.Allocate.Request do
 
   require Integer
 
-  @even_port_max_retries 100
+  @create_relays_max_retries 100
 
   @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
     :: {Params.t, TURN.t}
   def service(params, client, server, turn_state) do
     request_status =
-      {:continue, params, %{even_port: nil}}
+      {:continue, params, %{}}
       |> maybe(&verify_existing_allocation/5, [client, server, turn_state])
       |> maybe(&verify_requested_transport/2)
       |> maybe(&verify_dont_fragment/2)
@@ -60,7 +60,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
   end
 
   defp allocate(params, state, client, server, turn_state) do
-    {:ok, socket} = create_relay(state, server)
+    {:ok, socket} = create_relays(params, state, server)
     allocation = %Fennec.TURN.Allocation{
       socket: socket,
       expire_at: Fennec.Time.system_time(:second) + TURN.Allocation.default_lifetime(),
@@ -72,20 +72,68 @@ defmodule Fennec.Evaluator.Allocate.Request do
     {:respond, allocation_params(params, client, server, new_turn_state)}
   end
 
-  defp create_relay( state,  server, retries \\ @even_port_max_retries)
-  defp create_relay(_state, _server, retries)
-    when retries < 0, do: {:error, :even_port_max_retries}
-  defp create_relay( state,  server, retries) do
-    addr = server[:relay_ip]
-    ## TODO: {:active, true} is not an option for a production system!
-    {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
-    {:ok, {_, port}} = :inet.sockname(socket)
-    if state.even_port != nil and not Integer.is_even(port) do
-      :gen_udp.close(socket)
-      create_relay(state, server, retries - 1)
-    else
-      {:ok, socket}
+  defp create_relays(params, state, server) do
+    status =
+      {:continue, params, create_relay_state(state)}
+      |> maybe(&open_this_relay/3, [server])
+      |> maybe(&reserve_another_relay/3, [server])
+    case status do
+      _ -> :erlang.error(:"not implemented yet")
     end
+  end
+
+  defp create_relay_state(allocate_state) do
+    Map.merge(%{this_socket: nil,
+                this_port: nil,
+                retries: @create_relays_max_retries},
+              allocate_state)
+  end
+
+  defp open_this_relay(_params, %{retries: r}, _server)
+    when r < 0, do: {:error, :even_port_max_retries}
+  defp open_this_relay( params, state, server) do
+    case {Params.get_attr(params, Attribute.EvenPort),
+          :gen_udp.open(0, udp_opts(server))} do
+      {nil, {:ok, socket}} ->
+        {:continue, params, %{state | this_socket: socket}}
+      {%Attribute.EvenPort{}, {:ok, socket}} ->
+        {:ok, {_, port}} = :inet.sockname(socket)
+        if Integer.is_even(port) do
+          {:continue, params,
+            %{state | this_socket: socket, this_port: port}}
+        else
+          :gen_udp.close(socket)
+          new_state = %{state | retries: state.retries - 1}
+          open_this_relay(params, new_state, server)
+        end
+      {_, {:error, reason}} ->
+        {:error, reason}
+    end
+  end
+
+  defp reserve_another_relay(params, state, server) do
+    case Params.get_attr(params, Attribute.EvenPort) do
+      nil                                   -> {:continue, params, state}
+      %Attribute.EvenPort{reserved?: false} -> {:continue, params, state}
+      %Attribute.EvenPort{reserved?: true}  ->
+        port = state.this_port + 1
+        case :gen_udp.open(port, udp_opts(server)) do
+          {:error, :eaddrinuse} ->
+            :gen_udp.close(state.this_socket)
+            create_relays(params, %{retries: state.retries - 1}, server)
+            {:error, _} = e -> e
+          {:ok, socket} ->
+            reservation = Reservation.new(socket)
+            ## TODO: finish!
+            #Dispatcher.start_worker
+            :erlang.error(:"not implemented yet")
+        end
+    end
+  end
+
+  defp udp_opts(server) do
+    ## TODO: {:active, true} is not an option for a production system!
+    [:binary, active: true, ip: server[:relay_ip]]
   end
 
   defp verify_existing_allocation(params, state, client, server, turn_state) do
@@ -137,8 +185,6 @@ defmodule Fennec.Evaluator.Allocate.Request do
     case Params.get_attr(params, Attribute.EvenPort) do
       %Attribute.EvenPort{} when reservation_token != nil ->
         {:error, ErrorCode.new(:bad_request)}
-      %Attribute.EvenPort{} = ep ->
-        {:continue, params, %{state | even_port: ep}}
       _ ->
         {:continue, params, state}
     end
@@ -151,6 +197,13 @@ defmodule Fennec.Evaluator.Allocate.Request do
       _ ->
         nil
     end
+  end
+
+  @spec dispatcher(Fennec.UDP.server_opts) :: atom
+  defp dispatcher(server) do
+    server[:port]
+    |> Fennec.UDP.base_name()
+    |> Fennec.UDP.dispatcher_name()
   end
 
 end

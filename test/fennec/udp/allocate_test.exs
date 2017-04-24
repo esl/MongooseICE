@@ -164,6 +164,7 @@ defmodule Fennec.UDP.AllocateTest do
       ])
       %XORRelayedAddress{port: relay_port1} = Params.get_attr(params1, XORRelayedAddress)
       reservation_token = Params.get_attr(params1, ReservationToken)
+      IO.inspect(reservation_token, label: "\nreservation token")
       ## then the next allocation with a RESERVATION-TOKEN
       ## allocates a relay address with the reserved port
       udp2 = UDP.connect(addr, addr, 1)
