@@ -39,7 +39,7 @@ defmodule Fennec.UDP.AuthTemplate do
               :allocate   -> nil
               _           ->
                 quote do
-                  UDP.allocate(udp, username)
+                  UDP.allocate(udp, username: username)
                   UDP.create_permissions(udp, [{127,0,0,1}], username)
                 end
             end

@@ -75,13 +75,16 @@ defmodule Helper.UDP do
 
   ## UDP Client
 
-  def allocate(udp, username \\ @default_user, client_id \\ 0) do
+  def allocate(udp, opts \\ []) do
+    opts = Keyword.merge([username: @default_user,
+                          client_id: 0,
+                          attributes: []], opts)
     id = Params.generate_id()
-    req = allocate_request(id, [
+    req = allocate_request(id, opts[:attributes] ++ [
       %RequestedTransport{protocol: :udp},
-      %Username{value: username}
+      %Username{value: opts[:username]}
     ])
-    resp = no_auth(communicate(udp, client_id, req))
+    resp = no_auth(communicate(udp, opts[:client_id], req))
     params = Format.decode!(resp)
     %Params{class: :success,
             method: :allocate,
