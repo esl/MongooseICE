@@ -20,7 +20,7 @@ defmodule Fennec.Mixfile do
   end
 
   def application do
-    [extra_applications: [:logger],
+    [extra_applications: [:logger, :crypto, :runtime_tools],
      mod: {Fennec.Application, []}]
   end
 
