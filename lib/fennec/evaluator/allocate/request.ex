@@ -119,16 +119,34 @@ defmodule Fennec.Evaluator.Allocate.Request do
         port = state.this_port + 1
         case :gen_udp.open(port, udp_opts(server)) do
           {:error, :eaddrinuse} ->
+            ## We can't allocate a pair of consecutive ports.
+            ## We're jumping back to before we opened state.this_socket!
             :gen_udp.close(state.this_socket)
             create_relays(params, %{retries: state.retries - 1}, server)
-            {:error, _} = e -> e
+          {:error, reason} ->
+            {:error, reason}
           {:ok, socket} ->
-            reservation = Reservation.new(socket)
-            ## TODO: finish!
-            #Dispatcher.start_worker
-            :erlang.error(:"not implemented yet")
+            do_reserve_another_relay(params, state, server, socket)
         end
     end
+  end
+
+  ## TODO: make reservations more generic!
+  ## What we do here is actually not compliant with the TURN RFC
+  ## section 6.2 p.25-26, where it's explicitly stated that:
+  ##
+  ## > The 5-tuple for the Allocate request containing the RESERVATION-TOKEN
+  ## > attribute can be any allowed 5-tuple;
+  ## > it can use a different client IP address and port,
+  ## > a different transport protocol, and even different server IP
+  ## > address and port (provided, of course, that the server IP address
+  ## > and port are ones on which the server is listening for TURN requests).
+  defp do_reserve_another_relay(params, state, server, socket) do
+    alias Fennec.UDP
+    worker_sup = UDP.worker_sup_name(UDP.base_name(server[:port]))
+    {:ok, _} = Worker.start(worker_sup, socket, client_ip, client_port)
+    reservation = Reservation.new(socket)
+    :erlang.error(:"not implemented yet")
   end
 
   defp udp_opts(server) do
@@ -197,13 +215,6 @@ defmodule Fennec.Evaluator.Allocate.Request do
       _ ->
         nil
     end
-  end
-
-  @spec dispatcher(Fennec.UDP.server_opts) :: atom
-  defp dispatcher(server) do
-    server[:port]
-    |> Fennec.UDP.base_name()
-    |> Fennec.UDP.dispatcher_name()
   end
 
 end
