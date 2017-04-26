@@ -60,7 +60,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
   end
 
   defp allocate(params, state, client, server, turn_state) do
-    {:ok, socket} = create_relays(params, state, server)
+    {:ok, socket} = create_relays(params, state, client, server)
     allocation = %Fennec.TURN.Allocation{
       socket: socket,
       expire_at: Fennec.Time.system_time(:second) + TURN.Allocation.default_lifetime(),
@@ -72,17 +72,17 @@ defmodule Fennec.Evaluator.Allocate.Request do
     {:respond, allocation_params(params, client, server, new_turn_state)}
   end
 
-  defp create_relays(params, state, server) do
+  defp create_relays(params, state, client, server) do
     status =
-      {:continue, params, create_relay_state(state)}
+      {:continue, params, create_relays_state(state)}
       |> maybe(&open_this_relay/3, [server])
-      |> maybe(&reserve_another_relay/3, [server])
+      |> maybe(&reserve_another_relay/4, [client, server])
     case status do
       _ -> :erlang.error(:"not implemented yet")
     end
   end
 
-  defp create_relay_state(allocate_state) do
+  defp create_relays_state(allocate_state) do
     Map.merge(%{this_socket: nil,
                 this_port: nil,
                 retries: @create_relays_max_retries},
@@ -111,7 +111,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
     end
   end
 
-  defp reserve_another_relay(params, state, server) do
+  defp reserve_another_relay(params, state, client, server) do
     case Params.get_attr(params, Attribute.EvenPort) do
       nil                                   -> {:continue, params, state}
       %Attribute.EvenPort{reserved?: false} -> {:continue, params, state}
@@ -122,11 +122,11 @@ defmodule Fennec.Evaluator.Allocate.Request do
             ## We can't allocate a pair of consecutive ports.
             ## We're jumping back to before we opened state.this_socket!
             :gen_udp.close(state.this_socket)
-            create_relays(params, %{retries: state.retries - 1}, server)
+            create_relays(params, %{retries: state.retries - 1}, client, server)
           {:error, reason} ->
             {:error, reason}
           {:ok, socket} ->
-            do_reserve_another_relay(params, state, server, socket)
+            do_reserve_another_relay(params, state, client, server, socket)
         end
     end
   end
@@ -141,11 +141,13 @@ defmodule Fennec.Evaluator.Allocate.Request do
   ## > a different transport protocol, and even different server IP
   ## > address and port (provided, of course, that the server IP address
   ## > and port are ones on which the server is listening for TURN requests).
-  defp do_reserve_another_relay(params, state, server, socket) do
+  ##
+  ## By passing Fennec.client_info to UDP.Worker.start we violate the above.
+  defp do_reserve_another_relay(params, state, client, server, socket) do
     alias Fennec.UDP
     worker_sup = UDP.worker_sup_name(UDP.base_name(server[:port]))
-    {:ok, _} = Worker.start(worker_sup, socket, client_ip, client_port)
-    reservation = Reservation.new(socket)
+    {:ok, _} = UDP.Worker.start(worker_sup, client)
+    #reservation = Reservation.new(socket)
     :erlang.error(:"not implemented yet")
   end
 
@@ -191,8 +193,8 @@ defmodule Fennec.Evaluator.Allocate.Request do
     case Params.get_attr(params, Attribute.ReservationToken) do
       %Attribute.ReservationToken{} when even_port != nil ->
         {:error, ErrorCode.new(:bad_request)}
-      %Attribute.ReservationToken{} ->
-        {:error, ErrorCode.new(:unknown_attribute)} # Currently unsupported
+      #%Attribute.ReservationToken{} ->
+      #  {:error, ErrorCode.new(:unknown_attribute)} # Currently unsupported
       _ ->
         {:continue, params, state}
       end
