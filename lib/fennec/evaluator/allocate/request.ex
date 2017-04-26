@@ -10,6 +10,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
   alias Jerboa.Format.Body.Attribute.ErrorCode
   alias Jerboa.Params
   alias Fennec.TURN
+  alias Fennec.TURN.Reservation
 
   require Integer
 
@@ -146,8 +147,8 @@ defmodule Fennec.Evaluator.Allocate.Request do
   defp do_reserve_another_relay(params, state, client, server, socket) do
     alias Fennec.UDP
     worker_sup = UDP.worker_sup_name(UDP.base_name(server[:port]))
-    {:ok, _} = UDP.Worker.start(worker_sup, client)
-    #reservation = Reservation.new(socket)
+    {:ok, new_relay} = UDP.Worker.start(worker_sup, client)
+    r = Reservation.new(socket)
     :erlang.error(:"not implemented yet")
   end
 
