@@ -13,9 +13,9 @@ defmodule Fennec.UDP.Dispatcher do
 
   # Dispatches data to worker associated with client's
   # server-reflexive IP and port number
-  @spec dispatch(atom, atom, UDP.socket, Fennec.ip, Fennec.portn, binary) :: term
-  def dispatch(dispatcher, worker_sup, socket, ip, port, data) do
-    case find_or_start_worker(dispatcher, worker_sup, socket, ip, port) do
+  @spec dispatch(atom, atom, Fennec.client_info, binary) :: term
+  def dispatch(dispatcher, worker_sup, client, data) do
+    case find_or_start_worker(dispatcher, worker_sup, client) do
       {:ok, pid} ->
         Worker.process_data(pid, data)
       _ ->
@@ -39,16 +39,17 @@ defmodule Fennec.UDP.Dispatcher do
     Registry.lookup(dispatcher, key(ip, port))
   end
 
-  defp find_or_start_worker(dispatcher, worker_sup, socket, ip, port) do
+  defp find_or_start_worker(dispatcher, worker_sup, client) do
+    %{ip: ip, port: port} = client
     case lookup_worker(dispatcher, ip, port) do
       [{_owner, pid}] -> {:ok, pid}
       [] ->
-        start_worker(worker_sup, socket, ip, port)
+        start_worker(worker_sup, client)
     end
   end
 
-  defp start_worker(worker_sup, socket, ip, port) do
-    case Worker.start(worker_sup, socket, ip, port) do
+  defp start_worker(worker_sup, client) do
+    case Worker.start(worker_sup, client) do
       {:ok, pid} ->
         {:ok, pid}
       _ ->

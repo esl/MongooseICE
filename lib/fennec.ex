@@ -19,5 +19,6 @@ defmodule Fennec do
   @type ip :: :inet.ip_address
   @type portn :: :inet.port_number
 
-  @type client_info :: %{ip: Fennec.ip, port: Fennec.portn}
+  @type client_info :: %{socket: Fennec.UDP.socket,
+                         ip: Fennec.ip, port: Fennec.portn}
 end

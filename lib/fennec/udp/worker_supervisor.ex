@@ -19,9 +19,9 @@ defmodule Fennec.UDP.WorkerSupervisor do
   end
 
   # Starts worker under WorkerSupervisor
-  @spec start_worker(atom, UDP.socket, Fennec.ip, Fennec.portn) :: {:ok, pid} | :error
-  def start_worker(worker_sup, socket, ip, port) do
-    case Supervisor.start_child(worker_sup, [socket, ip, port]) do
+  @spec start_worker(atom, Fennec.client_info) :: {:ok, pid} | :error
+  def start_worker(worker_sup, client) do
+    case Supervisor.start_child(worker_sup, [client]) do
       {:ok, pid} ->
         {:ok, pid}
       _ ->

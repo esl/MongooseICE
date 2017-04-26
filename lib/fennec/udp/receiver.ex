@@ -27,8 +27,9 @@ defmodule Fennec.UDP.Receiver do
   end
 
   def handle_info({:udp, socket, ip, port, data}, %{socket: socket} = state) do
-    _ = Fennec.UDP.Dispatcher.dispatch(state.dispatcher, state.worker_sup,
-                                       socket, ip, port, data)
+    ## TODO: refactor to a proper struct?
+    client = %{socket: socket, ip: ip, port: port}
+    _ = Fennec.UDP.Dispatcher.dispatch(state.dispatcher, state.worker_sup, client, data)
     {:noreply, state}
   end
 end
