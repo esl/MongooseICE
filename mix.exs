@@ -33,6 +33,7 @@ defmodule Fennec.Mixfile do
      {:dialyxir, "~> 0.4", runtime: false, only: :dev},
      {:excoveralls, "~> 0.5", runtime: false, only: :test},
      {:inch_ex, "~> 0.5", runtime: false, only: :dev},
+     {:mix_docker, "~> 0.3.0"},
      {:mock, "~> 0.2.0", only: :test},
      {:jerboa, github: "esl/jerboa"}]
   end
