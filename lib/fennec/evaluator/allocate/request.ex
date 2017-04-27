@@ -87,7 +87,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
     %{this_socket: nil,
       this_port: nil,
       new_reservation_token: nil,
-      retries: allocate_state.retries || @create_relays_max_retries}
+      retries: Map.get(allocate_state, :retries) || @create_relays_max_retries}
   end
 
   defp open_this_relay(_params, %{retries: r}, _server)
