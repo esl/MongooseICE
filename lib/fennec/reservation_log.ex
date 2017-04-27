@@ -16,7 +16,7 @@ defmodule Fennec.ReservationLog do
 
   @spec register(name, Reservation.t) :: :ok | {:error, :exists}
   def register(name, %Reservation{} = r) do
-    case :ets.insert_new(name, {r.token.value, r}) do
+    case :ets.insert_new(name, Reservation.to_tuple(r)) do
       false -> {:error, :exists}
       _ -> :ok
     end
@@ -26,7 +26,7 @@ defmodule Fennec.ReservationLog do
   def take(name, %ReservationToken{} = token) do
     case :ets.take(name, token.value) do
       [] -> nil
-      [r] -> r
+      [r] -> Reservation.from_tuple(r)
     end
   end
 
