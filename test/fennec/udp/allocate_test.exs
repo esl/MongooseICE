@@ -170,7 +170,7 @@ defmodule Fennec.UDP.AllocateTest do
       udp2 = UDP.connect(addr, addr, 1)
       on_exit fn -> UDP.close(udp2) end
       params2 = UDP.allocate(udp2, attributes: [reservation_token])
-      %XORRelayedAddress{port: relay_port2} = Params.get_attr(params1, XORRelayedAddress)
+      %XORRelayedAddress{port: relay_port2} = Params.get_attr(params2, XORRelayedAddress)
       assert Integer.is_even(relay_port1)
       assert relay_port2 == relay_port1 + 1
     end
