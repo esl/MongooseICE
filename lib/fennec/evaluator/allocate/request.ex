@@ -13,6 +13,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
   alias Fennec.TURN.Reservation
 
   require Integer
+  require Logger
 
   @create_relays_max_retries 100
 
@@ -37,12 +38,16 @@ defmodule Fennec.Evaluator.Allocate.Request do
   end
 
   defp allocation_params(params, %{ip: a, port: p}, server,
-                         turn_state = %TURN{allocation: allocation}) do
+                         turn_state = %TURN{allocation: allocation},
+                         reservation_token) do
     %TURN.Allocation{socket: socket, expire_at: expire_at} = allocation
     {:ok, {socket_addr, port}} = :inet.sockname(socket)
     addr = server[:relay_ip] || socket_addr
     lifetime = max(0, expire_at - Fennec.Time.system_time(:second))
-    attrs = [
+    attrs = case reservation_token do
+      :not_requested -> []
+      %Attribute.ReservationToken{} -> [reservation_token]
+    end ++ [
       %Attribute.XORMappedAddress{
         family: family(a),
         address: a,
@@ -61,16 +66,20 @@ defmodule Fennec.Evaluator.Allocate.Request do
   end
 
   defp allocate(params, state, client, server, turn_state) do
-    {:ok, socket} = create_relays(params, state, server)
-    allocation = %Fennec.TURN.Allocation{
-      socket: socket,
-      expire_at: Fennec.Time.system_time(:second) + TURN.Allocation.default_lifetime(),
-      req_id: Params.get_id(params),
-      owner_username: owner_username(params)
-    }
-
-    new_turn_state = %{turn_state | allocation: allocation}
-    {:respond, allocation_params(params, client, server, new_turn_state)}
+    case create_relays(params, state, server) do
+      {:error, error_code} ->
+        {:error, error_code}
+      {:ok, socket, reservation_token} ->
+        allocation = %Fennec.TURN.Allocation{
+          socket: socket,
+          expire_at: Fennec.Time.system_time(:second) + TURN.Allocation.default_lifetime(),
+          req_id: Params.get_id(params),
+          owner_username: owner_username(params)
+        }
+        new_turn_state = %{turn_state | allocation: allocation}
+        {:respond, allocation_params(params, client, server, new_turn_state,
+                                     reservation_token)}
+    end
   end
 
   defp create_relays(params, state, server) do
@@ -79,22 +88,28 @@ defmodule Fennec.Evaluator.Allocate.Request do
       |> maybe(&open_this_relay/3, [server])
       |> maybe(&reserve_another_relay/3, [server])
     case status do
-      _ -> :erlang.error(:"not implemented yet")
+      {:continue, _params, state} ->
+        {:ok, state.this_socket, state.new_reservation_token}
+      {:error, error_code} ->
+        {:error, error_code}
     end
   end
 
   defp create_relays_state(allocate_state) do
     %{this_socket: nil,
       this_port: nil,
-      new_reservation_token: nil,
+      new_reservation_token: :not_requested,
       retries: Map.get(allocate_state, :retries) || @create_relays_max_retries}
   end
 
-  defp open_this_relay(_params, %{retries: r}, _server)
-    when r < 0, do: {:error, :even_port_max_retries}
+  defp open_this_relay(_params, %{retries: r}, _server) when r < 0 do
+    Logger.warn(:max_retries)
+    {:error, ErrorCode.new(:insufficient_capacity)}
+  end
   defp open_this_relay( params, state, server) do
+    opts = udp_opts(server)
     case {Params.get_attr(params, Attribute.EvenPort),
-          :gen_udp.open(0, udp_opts(server))} do
+          :gen_udp.open(0, opts)} do
       {nil, {:ok, socket}} ->
         {:continue, params, %{state | this_socket: socket}}
       {%Attribute.EvenPort{}, {:ok, socket}} ->
@@ -108,7 +123,8 @@ defmodule Fennec.Evaluator.Allocate.Request do
           open_this_relay(params, new_state, server)
         end
       {_, {:error, reason}} ->
-        {:error, reason}
+        Logger.warn(":gen_udp.open/2 error: #{reason}, port: 0, opts: #{opts}")
+        {:error, ErrorCode.new(:insufficient_capacity)}
     end
   end
 
@@ -118,14 +134,16 @@ defmodule Fennec.Evaluator.Allocate.Request do
       %Attribute.EvenPort{reserved?: false} -> {:continue, params, state}
       %Attribute.EvenPort{reserved?: true}  ->
         port = state.this_port + 1
-        case :gen_udp.open(port, udp_opts(server)) do
+        opts = udp_opts(server)
+        case :gen_udp.open(port, opts) do
           {:error, :eaddrinuse} ->
             ## We can't allocate a pair of consecutive ports.
             ## We're jumping back to before we opened state.this_socket!
             :gen_udp.close(state.this_socket)
             create_relays(params, %{retries: state.retries - 1}, server)
           {:error, reason} ->
-            {:error, reason}
+            Logger.warn(":gen_udp.open/2 error: #{reason}, port: #{port}, opts: #{opts}")
+            {:error, ErrorCode.new(:insufficient_capacity)}
           {:ok, socket} ->
             token = do_reserve_another_relay(server, socket)
             {:continue, params, %{state | new_reservation_token: token}}
@@ -151,7 +169,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
     req_id = Params.get_id(params)
     case turn_state do
       %TURN{allocation: %TURN.Allocation{req_id: ^req_id}} ->
-        {:respond, allocation_params(params, client, server, turn_state)}
+        {:respond, allocation_params(params, client, server, turn_state, :not_requested)}
       %TURN{allocation: %TURN.Allocation{}} ->
         {:error, ErrorCode.new(:allocation_mismatch)}
       %TURN{allocation: nil} ->
@@ -184,8 +202,6 @@ defmodule Fennec.Evaluator.Allocate.Request do
     case Params.get_attr(params, Attribute.ReservationToken) do
       %Attribute.ReservationToken{} when even_port != nil ->
         {:error, ErrorCode.new(:bad_request)}
-      #%Attribute.ReservationToken{} ->
-      #  {:error, ErrorCode.new(:unknown_attribute)} # Currently unsupported
       _ ->
         {:continue, params, state}
       end
