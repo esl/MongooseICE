@@ -84,10 +84,10 @@ defmodule Fennec.Evaluator.Allocate.Request do
   end
 
   defp create_relays_state(allocate_state) do
-    Map.merge(%{this_socket: nil,
-                this_port: nil,
-                retries: @create_relays_max_retries},
-              allocate_state)
+    %{this_socket: nil,
+      this_port: nil,
+      new_reservation_token: nil,
+      retries: allocate_state.retries || @create_relays_max_retries}
   end
 
   defp open_this_relay(_params, %{retries: r}, _server)
@@ -127,29 +127,18 @@ defmodule Fennec.Evaluator.Allocate.Request do
           {:error, reason} ->
             {:error, reason}
           {:ok, socket} ->
-            do_reserve_another_relay(params, state, client, server, socket)
+            token = do_reserve_another_relay(params, state, client, server, socket)
+            {:continue, params, %{state | new_reservation_token: token}}
         end
     end
   end
 
-  ## TODO: make reservations more generic!
-  ## What we do here is actually not compliant with the TURN RFC
-  ## section 6.2 p.25-26, where it's explicitly stated that:
-  ##
-  ## > The 5-tuple for the Allocate request containing the RESERVATION-TOKEN
-  ## > attribute can be any allowed 5-tuple;
-  ## > it can use a different client IP address and port,
-  ## > a different transport protocol, and even different server IP
-  ## > address and port (provided, of course, that the server IP address
-  ## > and port are ones on which the server is listening for TURN requests).
-  ##
-  ## By passing Fennec.client_info to UDP.Worker.start we violate the above.
-  defp do_reserve_another_relay(params, state, client, server, socket) do
-    alias Fennec.UDP
-    worker_sup = UDP.worker_sup_name(UDP.base_name(server[:port]))
-    {:ok, new_relay} = UDP.Worker.start(worker_sup, client)
+  defp do_reserve_another_relay(params, state, _client, server, socket) do
+    base_name = Fennec.UDP.base_name(server[:port])
+    rlog = Fennec.ReservationLog.name(base_name)
     r = Reservation.new(socket)
-    :erlang.error(:"not implemented yet")
+    :ok = Fennec.ReservationLog.register(rlog, r)
+    r.token
   end
 
   defp udp_opts(server) do
