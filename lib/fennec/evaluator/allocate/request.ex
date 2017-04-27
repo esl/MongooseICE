@@ -61,7 +61,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
   end
 
   defp allocate(params, state, client, server, turn_state) do
-    {:ok, socket} = create_relays(params, state, client, server)
+    {:ok, socket} = create_relays(params, state, server)
     allocation = %Fennec.TURN.Allocation{
       socket: socket,
       expire_at: Fennec.Time.system_time(:second) + TURN.Allocation.default_lifetime(),
@@ -73,11 +73,11 @@ defmodule Fennec.Evaluator.Allocate.Request do
     {:respond, allocation_params(params, client, server, new_turn_state)}
   end
 
-  defp create_relays(params, state, client, server) do
+  defp create_relays(params, state, server) do
     status =
       {:continue, params, create_relays_state(state)}
       |> maybe(&open_this_relay/3, [server])
-      |> maybe(&reserve_another_relay/4, [client, server])
+      |> maybe(&reserve_another_relay/3, [server])
     case status do
       _ -> :erlang.error(:"not implemented yet")
     end
@@ -112,7 +112,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
     end
   end
 
-  defp reserve_another_relay(params, state, client, server) do
+  defp reserve_another_relay(params, state, server) do
     case Params.get_attr(params, Attribute.EvenPort) do
       nil                                   -> {:continue, params, state}
       %Attribute.EvenPort{reserved?: false} -> {:continue, params, state}
@@ -123,17 +123,17 @@ defmodule Fennec.Evaluator.Allocate.Request do
             ## We can't allocate a pair of consecutive ports.
             ## We're jumping back to before we opened state.this_socket!
             :gen_udp.close(state.this_socket)
-            create_relays(params, %{retries: state.retries - 1}, client, server)
+            create_relays(params, %{retries: state.retries - 1}, server)
           {:error, reason} ->
             {:error, reason}
           {:ok, socket} ->
-            token = do_reserve_another_relay(params, state, client, server, socket)
+            token = do_reserve_another_relay(server, socket)
             {:continue, params, %{state | new_reservation_token: token}}
         end
     end
   end
 
-  defp do_reserve_another_relay(params, state, _client, server, socket) do
+  defp do_reserve_another_relay(server, socket) do
     base_name = Fennec.UDP.base_name(server[:port])
     rlog = Fennec.ReservationLog.name(base_name)
     r = Reservation.new(socket)
