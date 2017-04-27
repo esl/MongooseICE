@@ -85,7 +85,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
   defp create_relays(params, state, server) do
     status =
       {:continue, params, create_relays_state(state)}
-      |> maybe(&requests_reserved_port?/3, [server])
+      |> maybe(&requests_reserved_port?/2)
       |> maybe(&open_this_relay/3, [server])
       |> maybe(&reserve_another_relay/3, [server])
     case status do
@@ -105,14 +105,13 @@ defmodule Fennec.Evaluator.Allocate.Request do
       retries: Map.get(allocate_state, :retries) || @create_relays_max_retries}
   end
 
-  defp requests_reserved_port?(params, state, server) do
+  defp requests_reserved_port?(params, state) do
     case Params.get_attr(params, Attribute.ReservationToken) do
       nil -> {:continue, params, state}
       %Attribute.ReservationToken{} = token ->
-        log = rlog(server)
-        case Fennec.ReservationLog.take(log, token) do
+        case Fennec.ReservationLog.take(token) do
           nil ->
-            Logger.info fn -> "no reservation: log #{log}, token #{inspect(token)}" end
+            Logger.info fn -> "no reservation: #{inspect(token)}" end
             {:error, ErrorCode.new(:insufficient_capacity)}
           %Reservation{} = r ->
             {:respond, %{state | this_socket: r.socket}}
@@ -163,15 +162,15 @@ defmodule Fennec.Evaluator.Allocate.Request do
             Logger.warn(":gen_udp.open/2 error: #{reason}, port: #{port}, opts: #{opts}")
             {:error, ErrorCode.new(:insufficient_capacity)}
           {:ok, socket} ->
-            token = do_reserve_another_relay(server, socket)
+            token = do_reserve_another_relay(socket)
             {:continue, params, %{state | new_reservation_token: token}}
         end
     end
   end
 
-  defp do_reserve_another_relay(server, socket) do
+  defp do_reserve_another_relay(socket) do
     r = Reservation.new(socket)
-    :ok = Fennec.ReservationLog.register(rlog(server), r)
+    :ok = Fennec.ReservationLog.register(r)
     ## TODO: expire the reservation!
     r.token
   end

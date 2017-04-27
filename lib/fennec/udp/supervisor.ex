@@ -12,7 +12,6 @@ defmodule Fennec.UDP.Supervisor do
     children = [
       supervisor(Fennec.UDP.Dispatcher, [base_name]),
       supervisor(Fennec.UDP.WorkerSupervisor, [base_name, opts]),
-      worker(Fennec.ReservationLog, [base_name]),
       worker(Fennec.UDP.Receiver, [base_name, opts])
     ]
 

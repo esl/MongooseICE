@@ -5,7 +5,7 @@ defmodule Fennec.Application do
 
   def start(_type, _args) do
     opts = [strategy: :one_for_one, name: Fennec.Supervisor]
-    Supervisor.start_link(servers(), opts)
+    Supervisor.start_link([Fennec.ReservationLog.child_spec()] ++ servers(), opts)
   end
 
   defp servers do

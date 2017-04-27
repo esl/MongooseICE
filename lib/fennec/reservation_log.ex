@@ -7,32 +7,28 @@ defmodule Fennec.ReservationLog do
   alias Fennec.TURN.Reservation
   alias Jerboa.Format.Body.Attribute.ReservationToken
 
-  @type name :: atom
-
-  def start_link(base_name) do
-    name = __MODULE__.name(base_name)
-    Agent.start_link(fn -> init_db(name) end, name: name)
+  def start_link() do
+    Agent.start_link(fn -> init_db(__MODULE__) end, name: __MODULE__)
   end
 
-  @spec register(name, Reservation.t) :: :ok | {:error, :exists}
-  def register(name, %Reservation{} = r) do
-    case :ets.insert_new(name, Reservation.to_tuple(r)) do
+  def child_spec() do
+    Supervisor.Spec.worker(Fennec.ReservationLog, [])
+  end
+
+  @spec register(Reservation.t) :: :ok | {:error, :exists}
+  def register(%Reservation{} = r) do
+    case :ets.insert_new(__MODULE__, Reservation.to_tuple(r)) do
       false -> {:error, :exists}
       _ -> :ok
     end
   end
 
-  @spec take(name, ReservationToken.t) :: Reservation.t | nil
-  def take(name, %ReservationToken{} = token) do
-    case :ets.take(name, token.value) do
+  @spec take(ReservationToken.t) :: Reservation.t | nil
+  def take(%ReservationToken{} = token) do
+    case :ets.take(__MODULE__, token.value) do
       [] -> nil
       [r] -> Reservation.from_tuple(r)
     end
-  end
-
-  @spec name(name) :: name
-  def name(base_name) do
-    "#{base_name}.ReservationLog" |> String.to_atom()
   end
 
   defp init_db(table_name) do
