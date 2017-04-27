@@ -85,9 +85,12 @@ defmodule Fennec.Evaluator.Allocate.Request do
   defp create_relays(params, state, server) do
     status =
       {:continue, params, create_relays_state(state)}
+      |> maybe(&requests_reserved_port?/3, [server])
       |> maybe(&open_this_relay/3, [server])
       |> maybe(&reserve_another_relay/3, [server])
     case status do
+      {:respond, state} ->
+        {:ok, state.this_socket, state.new_reservation_token}
       {:continue, _params, state} ->
         {:ok, state.this_socket, state.new_reservation_token}
       {:error, error_code} ->
@@ -100,6 +103,15 @@ defmodule Fennec.Evaluator.Allocate.Request do
       this_port: nil,
       new_reservation_token: :not_requested,
       retries: Map.get(allocate_state, :retries) || @create_relays_max_retries}
+  end
+
+  defp requests_reserved_port?(params, state, server) do
+    case Params.get_attr(params, Attribute.ReservationToken) do
+      nil -> {:continue, params, state}
+      %Attribute.ReservationToken{} = token ->
+        %Reservation{} = r = Fennec.ReservationLog.take(rlog(server), token)
+        {:respond, %{state | this_socket: r.socket}}
+    end
   end
 
   defp open_this_relay(_params, %{retries: r}, _server) when r < 0 do
@@ -152,10 +164,8 @@ defmodule Fennec.Evaluator.Allocate.Request do
   end
 
   defp do_reserve_another_relay(server, socket) do
-    base_name = Fennec.UDP.base_name(server[:port])
-    rlog = Fennec.ReservationLog.name(base_name)
     r = Reservation.new(socket)
-    :ok = Fennec.ReservationLog.register(rlog, r)
+    :ok = Fennec.ReservationLog.register(rlog(server), r)
     ## TODO: expire the reservation!
     r.token
   end
@@ -224,6 +234,11 @@ defmodule Fennec.Evaluator.Allocate.Request do
       _ ->
         nil
     end
+  end
+
+  defp rlog(server) do
+    base_name = Fennec.UDP.base_name(server[:port])
+    Fennec.ReservationLog.name(base_name)
   end
 
 end
