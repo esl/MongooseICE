@@ -109,8 +109,14 @@ defmodule Fennec.Evaluator.Allocate.Request do
     case Params.get_attr(params, Attribute.ReservationToken) do
       nil -> {:continue, params, state}
       %Attribute.ReservationToken{} = token ->
-        %Reservation{} = r = Fennec.ReservationLog.take(rlog(server), token)
-        {:respond, %{state | this_socket: r.socket}}
+        log = rlog(server)
+        case Fennec.ReservationLog.take(log, token) do
+          nil ->
+            Logger.info fn -> "no reservation: log #{log}, token #{inspect(token)}" end
+            {:error, ErrorCode.new(:insufficient_capacity)}
+          %Reservation{} = r ->
+            {:respond, %{state | this_socket: r.socket}}
+        end
     end
   end
 
