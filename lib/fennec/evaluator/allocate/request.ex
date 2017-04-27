@@ -241,9 +241,4 @@ defmodule Fennec.Evaluator.Allocate.Request do
     end
   end
 
-  defp rlog(server) do
-    base_name = Fennec.UDP.base_name(server[:port])
-    Fennec.ReservationLog.name(base_name)
-  end
-
 end
