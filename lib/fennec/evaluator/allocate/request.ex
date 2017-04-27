@@ -138,6 +138,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
     rlog = Fennec.ReservationLog.name(base_name)
     r = Reservation.new(socket)
     :ok = Fennec.ReservationLog.register(rlog, r)
+    ## TODO: expire the reservation!
     r.token
   end
 
