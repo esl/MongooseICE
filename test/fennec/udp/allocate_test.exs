@@ -206,7 +206,32 @@ defmodule Fennec.UDP.AllocateTest do
   describe "reservation" do
 
     test "expires after timeout", _ctx do
-      flunk "not implemented yet"
+      ## given a TURN server
+      addr = {127, 0, 0, 1}
+      ## when allocating a UDP relay address with a subsequent port reservation,
+      ## but waiting too long
+      udp1 = UDP.connect(addr, addr, 1)
+      on_exit fn -> UDP.close(udp1) end
+      params1 = UDP.allocate(udp1, attributes: [
+        %RequestedTransport{protocol: :udp},
+        %EvenPort{reserved?: true}
+      ])
+      reservation_token = Params.get_attr(params1, ReservationToken)
+      ## then the reservation expires
+      udp2 = UDP.connect(addr, addr, 1)
+      on_exit fn -> UDP.close(udp2) end
+      id = Params.generate_id()
+      req = UDP.allocate_request(id, [
+        reservation_token,
+        %RequestedTransport{protocol: :udp}
+      ])
+      resp = no_auth(UDP.communicate(udp2, 0, req))
+      params = Format.decode!(resp)
+      assert %Params{class: :failure,
+                     method: :allocate,
+                     identifier: ^id,
+                     attributes: [error]} = params
+      assert %ErrorCode{name: :insufficient_capacity} = error
     end
 
     test "expires if original allocation is deleted", _ctx do
