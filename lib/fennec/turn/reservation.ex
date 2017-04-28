@@ -27,6 +27,9 @@ defmodule Fennec.TURN.Reservation do
                 socket: socket}
   end
 
+  @spec default_timeout :: Fennec.Time.seconds
+  def default_timeout, do: 30
+
   ## Only intended for storing in ETS
   def to_tuple(%__MODULE__{} = r) do
     %__MODULE__{token: %ReservationToken{value: token}} = r
