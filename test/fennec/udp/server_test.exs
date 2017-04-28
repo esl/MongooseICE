@@ -6,10 +6,11 @@ defmodule Fennec.UDP.ServerTest do
     {:ok, _} = Fennec.UDP.start(ip: {127, 0, 0, 1}, port: port)
 
     expected_name = String.to_atom(~s"Elixir.Fennec.UDP.#{port}")
-    assert [{^expected_name, _, _, _}] =
-      Supervisor.which_children(Fennec.Supervisor)
+    assert [{Fennec.ReservationLog, _, _, _}, {^expected_name, _, _, _}] =
+      Enum.sort(Supervisor.which_children(Fennec.Supervisor))
     assert :ok = Fennec.UDP.stop(port)
-    assert [] = Supervisor.which_children(Fennec.Supervisor)
+    assert [{Fennec.ReservationLog, _, _, _}] =
+      Supervisor.which_children(Fennec.Supervisor)
   end
 
   test "start/1 allows to start multiple servers on different ports" do
