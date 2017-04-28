@@ -26,14 +26,12 @@ defmodule Fennec.TURN.Reservation do
                 socket: socket}
   end
 
-  @doc false
   ## Only intended for storing in ETS
   def to_tuple(%__MODULE__{} = r) do
     %__MODULE__{token: %ReservationToken{value: token}} = r
     {token, r.socket}
   end
 
-  @doc false
   ## Only intended for storing in ETS
   def from_tuple({token, socket}) when is_binary(token) and is_port(socket) do
     %__MODULE__{token: %ReservationToken{value: token},

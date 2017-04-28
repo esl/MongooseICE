@@ -123,7 +123,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
     Logger.warn(:max_retries)
     {:error, ErrorCode.new(:insufficient_capacity)}
   end
-  defp open_this_relay( params, state, server) do
+  defp open_this_relay(params, state, server) do
     opts = udp_opts(server)
     case {Params.get_attr(params, Attribute.EvenPort),
           :gen_udp.open(0, opts)} do
