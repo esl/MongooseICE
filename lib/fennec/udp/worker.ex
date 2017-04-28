@@ -25,9 +25,9 @@ defmodule Fennec.UDP.Worker do
                  }
 
   # Starts a UDP worker
-  @spec start(atom, UDP.socket, Fennec.ip, Fennec.portn) :: {:ok, pid} | :error
-  def start(worker_sup, socket, ip, port) do
-    WorkerSupervisor.start_worker(worker_sup, socket, ip, port)
+  @spec start(atom, Fennec.client_info) :: {:ok, pid} | :error
+  def start(worker_sup, client) do
+    WorkerSupervisor.start_worker(worker_sup, client)
   end
 
   # Process UDP datagram which might be STUN message
@@ -36,16 +36,15 @@ defmodule Fennec.UDP.Worker do
     GenServer.cast(pid, {:process_data, data})
   end
 
-  def start_link(dispatcher, server_opts, socket, ip, port) do
-    GenServer.start_link(__MODULE__, [dispatcher, server_opts, socket, ip, port])
+  def start_link(dispatcher, server_opts, client) do
+    GenServer.start_link(__MODULE__, [dispatcher, server_opts, client])
   end
 
   ## GenServer callbacks
 
-  def init([dispatcher, server_opts, socket, ip, port]) do
-    _ = Dispatcher.register_worker(dispatcher, self(), ip, port)
-    client = %{ip: ip, port: port}
-    state = %{socket: socket, client: client, nonce_updated_at: 0,
+  def init([dispatcher, server_opts, client]) do
+    _ = Dispatcher.register_worker(dispatcher, self(), client.ip, client.port)
+    state = %{client: client, nonce_updated_at: 0,
               server: server_opts, turn: %TURN{}}
     {:ok, state, timeout(state)}
   end
@@ -61,7 +60,7 @@ defmodule Fennec.UDP.Worker do
         {:ok, {:void, new_turn_state}} ->
           %{state | turn: new_turn_state}
         {:ok, {resp, new_turn_state}} ->
-          :ok = :gen_udp.send(state.socket, state.client.ip,
+          :ok = :gen_udp.send(state.client.socket, state.client.ip,
                               state.client.port, resp)
           %{state | turn: new_turn_state}
       end
@@ -92,7 +91,7 @@ defmodule Fennec.UDP.Worker do
   end
 
   def handle_peer_data(:allowed, ip, port, data, state) do
-    :ok = :gen_udp.send(state.socket, state.client.ip, state.client.port,
+    :ok = :gen_udp.send(state.client.socket, state.client.ip, state.client.port,
                         Jerboa.Format.encode(data_params(ip, port, data)))
     state
   end
