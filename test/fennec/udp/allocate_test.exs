@@ -204,4 +204,20 @@ defmodule Fennec.UDP.AllocateTest do
 
   end
 
+  describe "reservation" do
+
+    test "expires after timeout", _ctx do
+      flunk "not implemented yet"
+    end
+
+    test "expires if original allocation is deleted", _ctx do
+      flunk "not implemented yet"
+    end
+
+    test "expires if original allocation expires", _ctx do
+      flunk "not implemented yet"
+    end
+
+  end
+
 end
