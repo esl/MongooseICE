@@ -78,8 +78,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
   defp create_relay( state,  server, retries) do
     addr = server[:relay_ip]
     ## TODO: {:active, true} is not an option for a production system!
-    next_port = Fennec.PortMaster.checkout_port(:relay)
-    {:ok, socket} = :gen_udp.open(next_port, [:binary, active: true, ip: addr])
+    {:ok, socket} = :gen_udp.open(0, [:binary, active: true, ip: addr])
     {:ok, {_, port}} = :inet.sockname(socket)
     if state.even_port != nil and not Integer.is_even(port) do
       :gen_udp.close(socket)
