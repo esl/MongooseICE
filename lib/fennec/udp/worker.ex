@@ -21,7 +21,7 @@ defmodule Fennec.UDP.Worker do
                    nonce_updated_at: integer,
                    client: Fennec.client_info,
                    server: UDP.server_opts,
-                   turn: TURN.t
+                   turn: TURN.t,
                  }
 
   # Starts a UDP worker
@@ -89,6 +89,11 @@ defmodule Fennec.UDP.Worker do
   def handle_info(:timeout, state) do
     handle_timeout(state)
   end
+  def handle_info({:expire_reservation, token}, state) do
+    :ok = Fennec.ReservationLog.expire(token)
+    next_state = %{state | turn: %{state.turn | reservation_timer_ref: nil}}
+    {:noreply, next_state, timeout(next_state)}
+  end
 
   def handle_peer_data(:allowed, ip, port, data, state) do
     :ok = :gen_udp.send(state.client.socket, state.client.ip, state.client.port,
@@ -102,6 +107,10 @@ defmodule Fennec.UDP.Worker do
   # Extracted as a separate function,
   # as it's easier to trace for side effects this way.
   defp handle_timeout(state) do
+    if read_timer(state.turn.reservation_timer_ref) != nil do
+      Logger.warn(~s"Reservation token leak detected!")
+    end
+
     {:stop, :normal, state}
   end
 
@@ -119,11 +128,12 @@ defmodule Fennec.UDP.Worker do
   end
 
   defp timeout(%{turn: %TURN{allocation: nil}}), do: @timeout
-  defp timeout(%{turn: %TURN{allocation: allocation}}) do
+  defp timeout(%{turn: %TURN{allocation: allocation}} = state) do
     %TURN.Allocation{expire_at: expire_at} = allocation
     now = Fennec.Time.system_time(:second)
     timeout_ms = (expire_at - now) * 1000
-    max(0, timeout_ms)
+    reservation_timer = read_timer(state.turn.reservation_timer_ref) || 0
+    Enum.max([0, timeout_ms, reservation_timer * 2])
   end
 
   defp data_params(ip, port, data) do
@@ -135,4 +145,15 @@ defmodule Fennec.UDP.Worker do
     |> P.put_attr(%Data{content: data})
     |> P.put_attr(XORPeerAddress.new(ip, port))
   end
+
+  defp read_timer(nil), do: nil
+  defp read_timer(t_ref) do
+    case Process.read_timer(t_ref) do
+      false ->
+        nil
+      timer_left ->
+        timer_left
+    end
+  end
+
 end
