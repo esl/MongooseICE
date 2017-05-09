@@ -45,6 +45,8 @@ defmodule Fennec.Evaluator do
       e = error(result)
       Logger.debug ~s"Request #{Params.get_method(result)} failed due " <>
                    ~s"to error #{e.name} (#{e.code})..."
+    else
+      Logger.debug ~s"Request #{Params.get_method(result)} processed succesfully"
     end
 
     result
