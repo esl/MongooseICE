@@ -13,12 +13,11 @@ defmodule Fennec.TURN.Reservation do
 
   alias Jerboa.Format.Body.Attribute.ReservationToken
 
-  defstruct [:token, :socket, :t_ref]
+  defstruct [:token, :socket]
 
   @type t :: %__MODULE__{
     token: ReservationToken.t,
-    socket: Fennec.UDP.socket,
-    t_ref: :timer.tref()
+    socket: Fennec.UDP.socket
   }
 
   @spec new(Fennec.UDP.socket) :: t

@@ -3,15 +3,14 @@ defmodule Fennec.TURN do
   # This module defines a struct used as TURN protocol state.
 
   defstruct allocation: nil, permissions: %{}, channels: [],
-            nonce: nil, realm: nil, reservation_timer_ref: nil
+            nonce: nil, realm: nil
 
   @type t :: %__MODULE__{
     allocation: nil | Fennec.TURN.Allocation.t,
     permissions: %{peer_addr :: Fennec.ip => expiration_time :: integer},
     channels: [],
     nonce: String.t,
-    realm: String.t,
-    reservation_timer_ref: Process.timer_ref
+    realm: String.t
   }
 
   @spec has_permission(state :: t, Fennec.ip) :: {new_state :: t, boolean}

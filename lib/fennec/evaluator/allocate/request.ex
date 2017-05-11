@@ -16,7 +16,6 @@ defmodule Fennec.Evaluator.Allocate.Request do
   require Logger
 
   @create_relays_max_retries 100
-  @default_token_expire_sec 30
 
   @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
     :: {Params.t, TURN.t}
@@ -70,14 +69,14 @@ defmodule Fennec.Evaluator.Allocate.Request do
     case create_relays(params, state, server) do
       {:error, error_code} ->
         {:error, error_code}
-      {:ok, socket, reservation_token, reservation_timer_ref} ->
+      {:ok, socket, reservation_token} ->
         allocation = %Fennec.TURN.Allocation{
           socket: socket,
           expire_at: Fennec.Time.system_time(:second) + TURN.Allocation.default_lifetime(),
           req_id: Params.get_id(params),
           owner_username: owner_username(params)
         }
-        new_turn_state = %{turn_state | allocation: allocation, reservation_timer_ref: reservation_timer_ref}
+        new_turn_state = %{turn_state | allocation: allocation}
         {:respond, allocation_params(params, client, server, new_turn_state,
                                      reservation_token)}
     end
@@ -91,9 +90,9 @@ defmodule Fennec.Evaluator.Allocate.Request do
       |> maybe(&reserve_another_relay/3, [server])
     case status do
       {:respond, state} ->
-        {:ok, state.this_socket, state.new_reservation_token, state.reservation_timer_ref}
+        {:ok, state.this_socket, state.new_reservation_token}
       {:continue, _params, state} ->
-        {:ok, state.this_socket, state.new_reservation_token, state.reservation_timer_ref}
+        {:ok, state.this_socket, state.new_reservation_token}
       {:error, error_code} ->
         {:error, error_code}
     end
@@ -103,7 +102,6 @@ defmodule Fennec.Evaluator.Allocate.Request do
     %{this_socket: nil,
       this_port: nil,
       new_reservation_token: :not_requested,
-      reservation_timer_ref: nil,
       retries: Map.get(allocate_state, :retries) || @create_relays_max_retries}
   end
 
@@ -164,17 +162,16 @@ defmodule Fennec.Evaluator.Allocate.Request do
             Logger.warn(":gen_udp.open/2 error: #{reason}, port: #{port}, opts: #{opts}")
             {:error, ErrorCode.new(:insufficient_capacity)}
           {:ok, socket} ->
-            {timer_ref, token} = do_reserve_another_relay(socket)
-            {:continue, params, %{state | new_reservation_token: token, reservation_timer_ref: timer_ref}}
+            token = do_reserve_another_relay(socket)
+            {:continue, params, %{state | new_reservation_token: token}}
         end
     end
   end
 
   defp do_reserve_another_relay(socket) do
     r = Reservation.new(socket)
-    :ok = Fennec.ReservationLog.register(r)
-    timer_ref = Process.send_after(self(), {:expire_reservation, r.token}, token_expiration_time()) 
-    {timer_ref, r.token}
+    :ok = Fennec.ReservationLog.register(r, Fennec.TURN.Reservation.default_timeout())
+    r.token
   end
 
   defp udp_opts(server) do
@@ -241,12 +238,6 @@ defmodule Fennec.Evaluator.Allocate.Request do
       _ ->
         nil
     end
-  end
-
-  defp token_expiration_time do
-    :fennec
-    |> Application.get_env(:default_reservation_token_expire_sec, @default_token_expire_sec)
-    |> :timer.seconds()
   end
 
 end
