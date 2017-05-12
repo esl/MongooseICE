@@ -2,7 +2,9 @@ defmodule Fennec.ReservationLog do
   @moduledoc false
 
   ## Runtime support for storing and fetching pending reservations.
-  ## I.e. an ETS table owner process.
+  ## ReservationLog is just a process registry of processes implemented in
+  ## Fennec.TURN.Reservation.Instance module. Each of those processes corresponds to single
+  ## reservation in order to easly invalidate itself when needed.
 
   alias Fennec.TURN.Reservation
   alias Jerboa.Format.Body.Attribute.ReservationToken
