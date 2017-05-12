@@ -170,8 +170,7 @@ defmodule Fennec.Evaluator.Allocate.Request do
 
   defp do_reserve_another_relay(socket) do
     r = Reservation.new(socket)
-    :ok = Fennec.ReservationLog.register(r)
-    ## TODO: expire the reservation!
+    :ok = Fennec.ReservationLog.register(r, Fennec.TURN.Reservation.default_timeout())
     r.token
   end
 

@@ -4,6 +4,8 @@ defmodule Fennec.Time do
   This should allow for testing timeouts without actually waiting.
   """
 
+  @type seconds :: integer
+
   @spec system_time(System.time_unit) :: integer
   def system_time(unit) do
     System.system_time(unit)

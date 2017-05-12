@@ -8,7 +8,7 @@ defmodule Fennec.UDP.AllocateTest do
   alias Jerboa.Format.Body.Attribute.{XORMappedAddress, Lifetime,
                                       XORRelayedAddress, ErrorCode,
                                       RequestedTransport, EvenPort,
-                                      ReservationToken}
+                                      ReservationToken, Lifetime}
 
   require Integer
 
@@ -164,7 +164,6 @@ defmodule Fennec.UDP.AllocateTest do
       ])
       %XORRelayedAddress{port: relay_port1} = Params.get_attr(params1, XORRelayedAddress)
       reservation_token = Params.get_attr(params1, ReservationToken)
-      IO.inspect(reservation_token, label: "\nreservation token")
       ## then the next allocation with a RESERVATION-TOKEN
       ## allocates a relay address with the reserved port
       udp2 = UDP.connect(addr, addr, 1)
@@ -202,6 +201,121 @@ defmodule Fennec.UDP.AllocateTest do
       end
     end
 
+  end
+
+  describe "reservation" do
+    import Mock
+
+    test "expires after timeout", _ctx do
+      ## Set reservation timeout to 1 second
+      with_mock Fennec.TURN.Reservation, [:passthrough], [default_timeout: fn() -> 1 end] do
+        ## given a TURN server
+        addr = {127, 0, 0, 1}
+        ## given the allocation
+        udp1 = UDP.connect(addr, addr, 1)
+        on_exit fn -> UDP.close(udp1) end
+        params1 = UDP.allocate(udp1, attributes: [
+          %RequestedTransport{protocol: :udp},
+          %EvenPort{reserved?: true}
+        ])
+        reservation_token = Params.get_attr(params1, ReservationToken)
+
+        ## when reservation lifetime ends
+        Process.sleep(1500)
+
+        ## then the reservation expires
+        udp2 = UDP.connect(addr, addr, 1)
+        on_exit fn -> UDP.close(udp2) end
+        id = Params.generate_id()
+        req = UDP.allocate_request(id, [
+          reservation_token,
+          %RequestedTransport{protocol: :udp}
+        ])
+        resp = no_auth(UDP.communicate(udp2, 0, req))
+        params = Format.decode!(resp)
+        assert %Params{class: :failure,
+                       method: :allocate,
+                       identifier: ^id,
+                       attributes: [error]} = params
+        assert %ErrorCode{name: :insufficient_capacity} = error
+      end
+    end
+
+    test "expires if original allocation is deleted", ctx do
+      ## given a TURN server
+      addr = {127, 0, 0, 1}
+      ## given the allocation
+      udp1 = UDP.connect(addr, addr, 1)
+      on_exit fn -> UDP.close(udp1) end
+      params1 = UDP.allocate(udp1, attributes: [
+        %RequestedTransport{protocol: :udp},
+        %EvenPort{reserved?: true}
+      ])
+      reservation_token = Params.get_attr(params1, ReservationToken)
+
+      ## when the reservation is manually removed
+      UDP.refresh(udp1, [%Lifetime{duration: 0}])
+
+      ## when cleanups have finished
+      Process.sleep(100)
+
+      ## then the reservation expires
+      udp2 = UDP.connect(addr, addr, 1)
+      on_exit fn -> UDP.close(udp2) end
+      id = Params.generate_id()
+      req = UDP.allocate_request(id, [
+        reservation_token,
+        %RequestedTransport{protocol: :udp}
+      ])
+      resp = no_auth(UDP.communicate(udp2, 0, req))
+      params = Format.decode!(resp)
+      assert %Params{class: :failure,
+                     method: :allocate,
+                     identifier: ^id,
+                     attributes: [error]} = params
+      assert %ErrorCode{name: :insufficient_capacity} = error
+    end
+
+    test "expires if original allocation expires", ctx do
+      ## given a TURN server
+      addr = {127, 0, 0, 1}
+      ## given the allocation
+      udp1 = UDP.connect(addr, addr, 1)
+      on_exit fn -> UDP.close(udp1) end
+      params1 = UDP.allocate(udp1, attributes: [
+        %RequestedTransport{protocol: :udp},
+        %EvenPort{reserved?: true}
+      ])
+      reservation_token = Params.get_attr(params1, ReservationToken)
+
+      ## when the allocation timeouts
+      now = Fennec.Time.system_time(:second)
+      future = now + 10_000
+      with_mock Fennec.Time, [system_time: fn(:second) -> future end] do
+        ## send indication to trigger timeout
+        :ok = UDP.send(udp1, 0, UDP.binding_indication(Params.generate_id()))
+        assert eventually called Fennec.Time.system_time(:second)
+      end
+
+      ## when cleanups have finished
+      Process.sleep(100)
+
+      ## then the reservation expires
+      udp2 = UDP.connect(addr, addr, 1)
+      on_exit fn -> UDP.close(udp2) end
+      id = Params.generate_id()
+      req = UDP.allocate_request(id, [
+        reservation_token,
+        %RequestedTransport{protocol: :udp}
+      ])
+      resp = no_auth(UDP.communicate(udp2, 0, req))
+      params = Format.decode!(resp)
+      assert %Params{class: :failure,
+                     method: :allocate,
+                     identifier: ^id,
+                     attributes: [error]} = params
+      assert %ErrorCode{name: :insufficient_capacity} = error
+    end
   end
 
 end
