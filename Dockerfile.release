@@ -1,0 +1,30 @@
+FROM phusion/baseimage
+
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+
+# required packages
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
+    bash \
+    bash-completion \
+    curl \
+    dnsutils \
+    vim && \
+    apt-get clean
+
+ENV FENNEC_CLIENT_BIND_ADDR=0.0.0.0 FENNEC_CLIENT_PORT=8443 MIX_ENV=prod \
+    REPLACE_OS_VARS=true SHELL=/bin/bash
+
+WORKDIR /opt/app
+
+ADD fennec.tar.gz ./
+
+# Move priv dir
+RUN mv $(find lib -name fennec-*)/priv .
+RUN ln -s $(pwd)/priv $(find lib -name fennec-*)/priv
+
+VOLUME /opt/app/priv
+
+CMD ["foreground"]
+ENTRYPOINT ["/opt/app/bin/fennec"]

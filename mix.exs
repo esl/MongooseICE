@@ -20,7 +20,7 @@ defmodule Fennec.Mixfile do
   end
 
   def application do
-    [extra_applications: [:logger],
+    [extra_applications: [:logger, :runtime_tools],
      mod: {Fennec.Application, []}]
   end
 
@@ -28,7 +28,9 @@ defmodule Fennec.Mixfile do
   defp elixirc_paths(_),     do: ["lib"]
 
   defp deps do
-    [{:ex_doc, "~> 0.14", runtime: false, only: :dev},
+    [{:confex, "~> 2.0.1"},
+     {:mix_docker, "~> 0.3.0"},
+     {:ex_doc, "~> 0.14", runtime: false, only: :dev},
      {:credo, "~> 0.5", runtime: false, only: :dev},
      {:dialyxir, "~> 0.4", runtime: false, only: :dev},
      {:excoveralls, "~> 0.5", runtime: false, only: :test},

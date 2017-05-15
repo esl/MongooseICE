@@ -22,7 +22,7 @@ defmodule Fennec.UDP.Receiver do
       {:ok, socket} ->
         {:ok, %{state | socket: socket}}
       {:error, reason} ->
-        {:stop, "Failed to open UDP socket. Reason: #{inspect reason}"}
+        {:stop, "Failed to open UDP(#{opts[:ip]}:#{opts[:port]}) socket. Reason: #{inspect reason}"}
     end
   end
 
