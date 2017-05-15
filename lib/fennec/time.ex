@@ -1,8 +1,7 @@
 defmodule Fennec.Time do
-  @moduledoc ~S"""
-  Abstract time(r)-related functions for mocking / overriding them in tests.
-  This should allow for testing timeouts without actually waiting.
-  """
+  @moduledoc false
+  # Abstract time(r)-related functions for mocking / overriding them in tests.
+  # This should allow for testing timeouts without actually waiting.
 
   @type seconds :: integer
 

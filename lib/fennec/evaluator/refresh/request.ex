@@ -1,9 +1,7 @@
 defmodule Fennec.Evaluator.Refresh.Request do
-  @moduledoc """
-  Implements Refresh request as defined by [RFC 5766 Section 7: Refreshing an Allocation][rfc5766-sec7].
-
-  [rfc5766-sec7]: https://tools.ietf.org/html/rfc5766#section-7
-  """
+  @moduledoc false
+  # Implements Refresh request as defined by [RFC 5766 Section 7: Refreshing an Allocation][rfc5766-sec7].
+  # [rfc5766-sec7]: https://tools.ietf.org/html/rfc5766#section-7
 
   import Fennec.Evaluator.Helper, only: [maybe: 3]
   alias Fennec.{TURN, TURN.Allocation}

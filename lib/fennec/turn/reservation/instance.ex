@@ -1,4 +1,6 @@
 defmodule Fennec.TURN.Reservation.Instance do
+  @moduledoc false
+
   use GenServer
 
   def init([registry, allocation_worker, reservation, timeout]) do
