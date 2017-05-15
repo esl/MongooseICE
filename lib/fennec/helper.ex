@@ -1,8 +1,7 @@
 defmodule Fennec.Helper do
-  @moduledoc """
-  Helper module that defines some commonly used functions in order to make
-  code cleaner and testing easier.
-  """
+  @moduledoc false
+  # Helper module that defines some commonly used functions in order to make
+  # code cleaner and testing easier.
 
   import Kernel, except: [to_string: 1]
   defimpl String.Chars, for: Tuple do

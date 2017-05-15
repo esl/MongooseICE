@@ -1,5 +1,5 @@
 defmodule Fennec do
-  @moduledoc """
+  @moduledoc ~S"""
   STUN/TURN servers
 
   Fennec allows you to start multiple listeners (later called "servers")
@@ -14,6 +14,15 @@ defmodule Fennec do
 
   Currently only UDP transport is supported. Read more about it in the documentation
   of `Fennec.UDP`.
+
+  ## Global configuration
+
+  The only parameter configured globally is a shared secret used for TURN
+  authentication:
+
+      config :fennec, secret: "my_secret"
+
+  Currently it is not possible to configure it per listening TURN port.
   """
 
   @type ip :: :inet.ip_address
