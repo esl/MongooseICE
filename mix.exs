@@ -3,7 +3,7 @@ defmodule Fennec.Mixfile do
 
   def project do
     [app: :fennec,
-     version: "0.1.0",
+     version: "0.2.0",
      name: "Fennec",
      description: "STUN/TURN server",
      source_url: "https://github.com/esl/fennec",
@@ -45,7 +45,7 @@ defmodule Fennec.Mixfile do
 
   defp docs do
     [main: "Fennec",
-     extras: ["README.md": [title: "Jerboa"]]]
+     extras: ["README.md": [title: "Fennec"]]]
   end
 
   defp dialyzer do
