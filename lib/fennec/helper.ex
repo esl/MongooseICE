@@ -21,4 +21,10 @@ defmodule Fennec.Helper do
   def inet_to_string(addr) do
     Kernel.to_string(:inet.ntoa(addr))
   end
+
+  @spec string_to_inet(String.t) :: Fennec.ip
+  def string_to_inet(addr) do
+    {:ok, inet_addr} = :inet.parse_address(String.to_charlist(addr))
+    inet_addr
+  end
 end

@@ -13,7 +13,8 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     vim && \
     apt-get clean
 
-ENV FENNEC_CLIENT_BIND_ADDR=0.0.0.0 FENNEC_CLIENT_PORT=8443 MIX_ENV=prod \
+ENV FENNEC_UDP_BIND_IP=0.0.0.0 FENNEC_UDP_PORT=3478 MIX_ENV=prod \
+    FENNEC_TCP_BIND_IP=0.0.0.0 FENNEC_TCP_PORT=3479 MIX_ENV=prod \
     REPLACE_OS_VARS=true SHELL=/bin/bash
 
 WORKDIR /opt/app

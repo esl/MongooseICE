@@ -12,7 +12,7 @@ defmodule Fennec.Auth do
   @nonce_lifetime_seconds 60 * 60 # 1h
 
   def get_secret do
-    Application.get_env(:fennec, :secret)
+    Confex.get(:fennec, :secret)
   end
 
   def nonce_lifetime() do
