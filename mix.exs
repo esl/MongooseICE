@@ -34,7 +34,7 @@ defmodule Fennec.Mixfile do
      {:excoveralls, "~> 0.5", runtime: false, only: :test},
      {:inch_ex, "~> 0.5", runtime: false, only: :dev},
      {:mock, "~> 0.2.0", only: :test},
-     {:jerboa, github: "esl/jerboa"}]
+     {:jerboa, "~> 0.2.0"}]
   end
 
   defp package do
