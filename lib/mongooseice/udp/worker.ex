@@ -17,6 +17,9 @@ defmodule MongooseICE.UDP.Worker do
   # should be configurable
   @timeout 5_000
 
+  # how many packets should we accept per one :inet.setopts(socket, {:active, N}) call?
+  @burst_length 500
+
   @type state :: %{socket: UDP.socket,
                    nonce_updated_at: integer,
                    client: MongooseICE.client_info,
@@ -89,6 +92,14 @@ defmodule MongooseICE.UDP.Worker do
     {:noreply, next_state, timeout(next_state)}
   end
 
+  def handle_info({:udp_passive, socket},
+                  %{turn: %TURN{allocation: %TURN.Allocation{socket: socket}}} = state) do
+    n = burst_length()
+    Logger.debug(~s"Processed #{n} peer packets")
+    :inet.setopts(socket, [active: n])
+    {:noreply, state, timeout(state)}
+  end
+
   def handle_info(:timeout, state) do
     handle_timeout(state)
   end
@@ -157,4 +168,6 @@ defmodule MongooseICE.UDP.Worker do
     alias Jerboa.ChannelData
     %ChannelData{channel_number: channel_number, data: data}
   end
+
+  def burst_length, do: @burst_length
 end
