@@ -115,7 +115,7 @@ defmodule Helper.UDP do
 
   ## Communication
 
-  def setup_connection(_ctx, family \\ :ipv6) do
+  def setup_connection(_ctx, family \\ :ipv4) do
     addr =
       case family do
         :ipv4 -> {127, 0, 0, 1}

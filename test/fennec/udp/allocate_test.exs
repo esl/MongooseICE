@@ -15,7 +15,7 @@ defmodule Fennec.UDP.AllocateTest do
   describe "allocate request" do
 
     setup do
-      {:ok, [udp: UDP.setup_connection([], :ipv6)]}
+      {:ok, [udp: UDP.setup_connection([], :ipv4)]}
     end
 
     test "fails without RequestedTransport attribute", ctx do
@@ -54,7 +54,7 @@ defmodule Fennec.UDP.AllocateTest do
       assert %ErrorCode{code: 400} = error
     end
 
-    test "returns response with IPv6 XOR relayed address attribute", ctx do
+    test "returns response with IPv4 XOR relayed address attribute", ctx do
       udp = ctx.udp
       %{server_address: server_address, client_address: client_address} = udp
       client_port = UDP.client_port(udp, 0)
@@ -74,11 +74,11 @@ defmodule Fennec.UDP.AllocateTest do
 
       assert %XORMappedAddress{address: ^client_address,
                                port: ^client_port,
-                               family: :ipv6} = mapped
+                               family: :ipv4} = mapped
 
       assert %XORRelayedAddress{address: ^server_address,
                                 port: relayed_port,
-                                family: :ipv6} = relayed
+                                family: :ipv4} = relayed
       assert relayed_port != udp.server_port
     end
 
