@@ -20,7 +20,7 @@ defmodule Fennec.Mixfile do
   end
 
   def application do
-    [extra_applications: [:logger, :runtime_tools],
+    [extra_applications: [:logger, :runtime_tools, :crypto],
      mod: {Fennec.Application, []}]
   end
 
@@ -29,7 +29,7 @@ defmodule Fennec.Mixfile do
 
   defp deps do
     [{:confex, "~> 2.0.1"},
-     {:mix_docker, "~> 0.3.0"},
+     {:mix_docker, "~> 0.3.0", runtime: false},
      {:ex_doc, "~> 0.14", runtime: false, only: :dev},
      {:credo, "~> 0.5", runtime: false, only: :dev},
      {:dialyxir, "~> 0.4", runtime: false, only: :dev},
