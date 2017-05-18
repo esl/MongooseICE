@@ -10,16 +10,10 @@ defmodule Fennec.UDP.BindingTest do
   describe "binding request" do
 
     setup do
-      udp =
-        UDP.connect({0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 1}, 1)
-      on_exit fn ->
-        UDP.close(udp)
-      end
-
-      {:ok, [udp: udp]}
+      {:ok, [udp: UDP.setup_connection([], :ipv4)]}
     end
 
-    test "returns response with IPv6 XOR mapped address attribute", ctx do
+    test "returns response with IPv4 XOR mapped address attribute", ctx do
       udp = ctx.udp
       client_address = udp.client_address
       client_port = UDP.client_port(udp, 0)
@@ -36,7 +30,7 @@ defmodule Fennec.UDP.BindingTest do
                      attributes: [a]} = params
       assert %XORMappedAddress{address: ^client_address,
                                port: ^client_port,
-                               family: :ipv6} = a
+                               family: :ipv4} = a
     end
   end
 
