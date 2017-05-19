@@ -2,6 +2,8 @@ defmodule Fennec.UDP.Supervisor do
   @moduledoc false
   # Supervisor of UDP listener, dispatcher and workers
 
+  require Logger
+
   @spec start_link(Fennec.UDP.server_opts) :: Supervisor.on_start
   def start_link(opts) do
     import Supervisor.Spec, warn: false
@@ -14,6 +16,9 @@ defmodule Fennec.UDP.Supervisor do
       supervisor(Fennec.UDP.WorkerSupervisor, [base_name, opts]),
       worker(Fennec.UDP.Receiver, [base_name, opts])
     ]
+
+    Logger.info(~s"Starting STUN/TURN server (#{opts[:ip]}:#{opts[:port]}) " <>
+                ~s"with relay_ip: #{opts[:relay_ip]}")
 
     opts = [strategy: :one_for_all, name: name]
     Supervisor.start_link(children, opts)

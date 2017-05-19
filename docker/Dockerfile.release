@@ -20,6 +20,8 @@ ENV FENNEC_UDP_BIND_IP=0.0.0.0 FENNEC_UDP_PORT=3478 MIX_ENV=prod \
 WORKDIR /opt/app
 
 ADD fennec.tar.gz ./
+ADD docker/start.sh /opt/app/start.sh
+RUN chmod +x /opt/app/start.sh
 
 # Move priv dir
 RUN mv $(find lib -name fennec-*)/priv .
@@ -28,4 +30,4 @@ RUN ln -s $(pwd)/priv $(find lib -name fennec-*)/priv
 VOLUME /opt/app/priv
 
 CMD ["foreground"]
-ENTRYPOINT ["/opt/app/bin/fennec"]
+ENTRYPOINT ["/opt/app/start.sh"]
