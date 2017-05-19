@@ -1,22 +1,50 @@
 defmodule Fennec.Application do
   @moduledoc false
 
+  @app :fennec
+  @ip_addr_config_keys [:ip, :relay_ip]
+
   use Application
 
   def start(_type, _args) do
+    loglevel = Confex.get(@app, :loglevel, :info)
+    Logger.configure(level: loglevel)
+
     opts = [strategy: :one_for_one, name: Fennec.Supervisor]
     Supervisor.start_link([Fennec.ReservationLog.child_spec()] ++ servers(), opts)
   end
 
   defp servers do
-    :fennec
-    |> Application.get_env(:servers, [])
+    @app
+    |> Confex.get_map(:servers, [])
+    |> Enum.filter(fn({type, _}) -> is_proto_enabled(type) end)
     |> Enum.map(&make_server/1)
   end
 
-  defp make_server({type, config}) do
-    server_mod(type).child_spec(config)
+  defp is_proto_enabled(type) do
+    @app
+    |> Confex.get(String.to_atom(~s"#{type}_enabled"), true)
   end
+
+  defp make_server({type, config}) do
+    config
+    |> normalize_server_config()
+    |> server_mod(type).child_spec()
+  end
+
+  defp normalize_server_config(config) do
+    Enum.map(config, fn({key, value}) ->
+      case Enum.member?(@ip_addr_config_keys, key) do
+        false -> {key, value}
+        true  -> {key, normalize_ip_addr(value)}
+      end
+    end)
+  end
+
+  defp normalize_ip_addr(addr) when is_binary(addr) do
+    Fennec.Helper.string_to_inet(addr)
+  end
+  defp normalize_ip_addr(addr), do: addr
 
   defp server_mod(:udp), do: Fennec.UDP
 end
