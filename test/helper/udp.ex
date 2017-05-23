@@ -191,4 +191,14 @@ defmodule Helper.UDP do
      udp.client_port_base + client_id + 1
   end
 
+  def worker(udp, client_id) do
+      alias Fennec.UDP.Dispatcher
+
+      base_name = Fennec.UDP.base_name(udp.server_port)
+      dispatcher = Fennec.UDP.dispatcher_name(base_name)
+      [{_, worker}] = Dispatcher.lookup_worker(dispatcher, udp.client_address,
+        client_port(udp, client_id))
+      worker
+  end
+
 end

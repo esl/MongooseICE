@@ -7,10 +7,13 @@ defmodule Fennec.Evaluator.ChannelBind.Request do
   alias Jerboa.Format.Body.Attribute.ChannelNumber
   alias Fennec.UDP
   alias Fennec.TURN
+  alias Fennec.TURN.Channel
 
   import Fennec.Evaluator.Helper, only: [maybe: 3, maybe: 2]
 
   require Logger
+
+  @lifetime 10 * 60 # 10 minutes
 
   @spec service(Params.t, Fennec.client_info, UDP.server_opts, TURN.t)
     :: {Params.t, TURN.t}
@@ -86,10 +89,19 @@ defmodule Fennec.Evaluator.ChannelBind.Request do
   defp bind_channel(params, context, turn_state) do
     %{peer: peer, channel_number: channel_number, refresh?: refresh?} = context
     {ip, port} = peer
-    Logger.debug fn ->
-      "Binding channel ##{channel_number} to peer #{ip}:#{port}"
+      if refresh? do
+        Logger.debug fn ->
+          "Refreshing channel ##{channel_number} bound to peer #{ip}:#{port}"
+        end
+    else
+      Logger.debug fn ->
+        "Binding channel ##{channel_number} to peer #{ip}:#{port}"
+      end
     end
-    {:respond, {Params.set_attrs(params, []), turn_state}}
+      new_turn_state =
+        create_or_update_channel(turn_state, peer, channel_number)
+        |> TURN.put_permission(ip)
+    {:respond, {Params.set_attrs(params, []), new_turn_state}}
   end
 
   @spec valid_channel_number?(ChannelNumber.t) :: boolean
@@ -99,11 +111,37 @@ defmodule Fennec.Evaluator.ChannelBind.Request do
 
   @spec channel_bound?(TURN.t, Fennec.address, Jerboa.Format.channel_number)
     :: boolean
-  defp channel_bound?(_, _, _), do: false
+  defp channel_bound?(turn_state, peer, channel_number) do
+    with {:ok, channel} <- TURN.get_channel(turn_state, peer),
+         true           <- channel.number == channel_number do
+      true
+    else
+      _ -> false
+    end
+  end
 
   @spec peer_bound?(TURN.t, Fennec.address) :: boolean
-  defp peer_bound?(_, _), do: false
+  defp peer_bound?(turn_state, peer) do
+    case TURN.get_channel(turn_state, peer) do
+      {:ok, _} -> true
+      _        -> false
+    end
+  end
 
   @spec channel_number_bound?(TURN.t, Jerboa.Format.channel_number) :: boolean
-  defp channel_number_bound?(_, _), do: false
+  defp channel_number_bound?(turn_state, channel_number) do
+    case TURN.get_channel(turn_state, channel_number) do
+      {:ok, _} -> true
+      _        -> false
+    end
+  end
+
+  @spec create_or_update_channel(TURN.t, peer :: Fennec.address,
+    Format.channel_number) :: TURN.t
+  defp create_or_update_channel(turn_state, peer, channel_number) do
+    expire_at = Fennec.Time.system_time(:second) + @lifetime
+    channel = %Channel{peer: peer, number: channel_number,
+                       expiration_time: expire_at}
+    TURN.put_channel(turn_state, channel)
+  end
 end

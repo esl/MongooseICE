@@ -9,6 +9,8 @@ defmodule Fennec.UDP.ChannelBindTest do
   alias Jerboa.Format.Body.Attribute.XORPeerAddress, as: XPA
   alias Jerboa.Format.Body.Attribute.ChannelNumber
 
+  import Mock
+
   setup ctx do
     udp = UDP.connect({127, 0, 0, 1}, {127, 0, 0, 1}, 1)
     if ctx[:allocate], do: UDP.allocate(udp)
@@ -71,14 +73,23 @@ defmodule Fennec.UDP.ChannelBindTest do
   @tag :allocate
   test "succeeds with CHANNEL-NUMBER and XOR-PEER-ADDRESS attributes",
     %{udp: udp} do
+    worker = UDP.worker(udp, 0)
     id = Params.generate_id()
+    peer_ip = {127, 0, 0, 1}
+    peer_port = 12_345
+    channel_number = 0x4000
     attrs = [
-      %ChannelNumber{number: 0x4000},
-      XPA.new({127, 0, 0, 1}, 12_345)
+      %ChannelNumber{number: channel_number},
+      XPA.new(peer_ip, peer_port)
     ]
     req = UDP.channel_bind_request(id, attrs)
 
     resp = no_auth(UDP.communicate(udp, 0, req))
+    assert [channel] = GenServer.call(worker, :get_channels)
+    assert channel.peer == {peer_ip, peer_port}
+    assert channel.number == channel_number
+    permissions = GenServer.call(worker, :get_permissions)
+    assert peer_ip in Map.keys(permissions)
     params = Format.decode!(resp)
 
     assert Params.get_class(params) == :success
@@ -87,7 +98,8 @@ defmodule Fennec.UDP.ChannelBindTest do
   end
 
   @tag :allocate
-  test "succeeds given previously bound peer and channel number", %{udp: udp} do
+  test "refreshes given previously bound peer and channel number", %{udp: udp} do
+    worker = UDP.worker(udp, 0)
     peer_ip = {127, 0, 0, 1}
     peer_port = 12_345
     channel_number = 0x4000
@@ -102,17 +114,33 @@ defmodule Fennec.UDP.ChannelBindTest do
 
     # 1st request
     no_auth(UDP.communicate(udp, 0, req1))
-    # 2nd request
-    resp = no_auth(UDP.communicate(udp, 0, req2))
-    params = Format.decode!(resp)
+    assert [channel] = GenServer.call(worker, :get_channels)
+    assert channel.peer == {peer_ip, peer_port}
+    assert channel.number == channel_number
+    expiration_time1 = channel.expiration_time
 
-    assert Params.get_class(params) == :success
-    assert Params.get_method(params) == :channel_bind
-    assert Params.get_id(params) == id2
+    # 2nd request
+    time_passed = 2 * 60
+    with_mock Fennec.Time, [:passthrough], [system_time: fn (:second) ->
+      :meck.passthrough([:second]) + time_passed
+    end] do
+      resp = no_auth(UDP.communicate(udp, 0, req2))
+      params = Format.decode!(resp)
+
+      assert Params.get_class(params) == :success
+      assert Params.get_method(params) == :channel_bind
+      assert Params.get_id(params) == id2
+      assert [channel] = GenServer.call(worker, :get_channels)
+      assert channel.peer == {peer_ip, peer_port}
+      assert channel.number == channel_number
+      expiration_time2 = channel.expiration_time
+      assert expiration_time2 == expiration_time1 + time_passed
+    end
   end
 
   @tag :allocate
   test "fails given already bound peer address", %{udp: udp} do
+    worker = UDP.worker(udp, 0)
     peer_ip = {127, 0, 0, 1}
     peer_port = 12_345
     xor_peer_addr = XPA.new(peer_ip, peer_port)
@@ -135,6 +163,10 @@ defmodule Fennec.UDP.ChannelBindTest do
 
     # 1st request
     no_auth(UDP.communicate(udp, 0, req1))
+    assert [channel] = GenServer.call(worker, :get_channels)
+    assert channel.number == channel_number1
+    assert channel.peer == {peer_ip, peer_port}
+
     # 2nd request
     resp = no_auth(UDP.communicate(udp, 0, req2))
     params = Format.decode!(resp)
@@ -144,28 +176,37 @@ defmodule Fennec.UDP.ChannelBindTest do
     assert Params.get_id(params) == id2
     assert [error] = Params.get_attrs(params)
     assert error.name == :bad_request
+    assert [^channel] = GenServer.call(worker, :get_channels)
   end
 
   @tag :allocate
   test "fails given already bound channel number", %{udp: udp} do
-    channel_number = %ChannelNumber{number: 0x4000}
-
+    peer_ip1 = {127, 0, 0, 1}
+    peer_port1 = 12_345
+    worker = UDP.worker(udp, 0)
+    channel_number = 0x4000
     id1 = Params.generate_id()
     attrs1 = [
-      channel_number,
-      XPA.new({127, 0, 0, 1}, 12_345)
+      %ChannelNumber{number: channel_number},
+      XPA.new(peer_ip1, peer_port1)
     ]
     req1 = UDP.channel_bind_request(id1, attrs1)
 
+    peer_ip2 = {127, 0, 0, 2}
+    peer_port2 = 54_321
     id2 = Params.generate_id()
     attrs2 = [
-      channel_number,
-      XPA.new({127, 0, 0, 1}, 54_321)
+      %ChannelNumber{number: channel_number},
+      XPA.new(peer_ip2, peer_port2)
     ]
     req2 = UDP.channel_bind_request(id2, attrs2)
 
     # 1st request
     no_auth(UDP.communicate(udp, 0, req1))
+    assert [channel] = GenServer.call(worker, :get_channels)
+    assert channel.number == channel_number
+    assert channel.peer == {peer_ip1, peer_port1}
+
     # 2nd request
     resp = no_auth(UDP.communicate(udp, 0, req2))
     params = Format.decode!(resp)
@@ -175,5 +216,6 @@ defmodule Fennec.UDP.ChannelBindTest do
     assert Params.get_id(params) == id2
     assert [error] = Params.get_attrs(params)
     assert error.name == :bad_request
+    assert [^channel] = GenServer.call(worker, :get_channels)
   end
 end
