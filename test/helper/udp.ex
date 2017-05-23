@@ -63,6 +63,18 @@ defmodule Helper.UDP do
             attributes: attrs}
   end
 
+  def channel_bind_request(id, attrs) do
+    channel_bind_params(id, attrs)
+    |> Format.encode()
+  end
+
+  def channel_bind_params(id, attrs) do
+    %Params{identifier: id}
+    |> Params.put_class(:request)
+    |> Params.put_method(:channel_bind)
+    |> Params.set_attrs(attrs)
+  end
+
   def peers(peers) do
     for ip <- peers do
       %XORPeerAddress{
