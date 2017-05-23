@@ -22,7 +22,7 @@ The reason why is described in [this][SIGNALING] tutorial.
 Our [XMPP server][MONGOOSE], MongooseIM, is perfect for building a combination of signaling and chat applications
 * Find the STUN, TURN, and ICE RFCs (at the IETF site)
 
-### Installation
+### Installation as part of other application
 
 Fennec is available on [Hex](https://hex.pm/packages/fennec). To use it, just add it to your dependencies:
 
@@ -31,6 +31,77 @@ def deps do
   [{:fennec, "~> 0.2.0"}]
 end
 ```
+
+### Installation as standalone service
+
+For now there are two ways of starting `fennec` as standalone application. Via release built from
+source or via prebuilt docker image. The docker image could be used for production system with a proper
+network setup (the easiest one would be `--net=host` docker option). For developement on non-docker-native platforms
+it is probably easier to start the built release then setup docker container to work correctly.
+This is due to the fact that TURN server uses system ephemeral port pool for allocations, which is
+not so easy to map to the host machine. This issue is not visible on Linux systems, since you
+can allow docker to use its private virtual network and just use the docker container's IP address
+as the relay IP (which is set this way in `fennec` by default when using the docker image).
+
+#### Building and using a release
+
+You may build the release and use it on production system. In order to do that, just type:
+
+```bash
+MIX_ENV=prod mix do deps.get, release
+```
+
+The release can be configured by environment variables described in **Configuration** section below.
+
+#### Using docker prebuilt container
+
+You can use our prebuilt docker images on our dockerhub:
+
+```bash
+docker run -it -p 3478:3478/udp -e "FENNEC_STUN_SECRET=very_secret" mongooseim/fennec
+```
+
+This command will start the *fennec* server with default configuration and with STUN secret set
+to *very_secret*. If you are using this on Linux, the part with `-p 3478:3478/udp` is not needed, since
+you can access the server directly using the container's IP. You can configure the server by passing
+environment variables to the container. All those variables are described in **Configuration** section below.
+
+#### Building docker container
+
+Well, that's gonna be quite simple and short:
+
+```bash
+MIX_ENV=prod mix do deps.get, docker.build, docker.release
+```
+
+And that's it. You have just built `fennec's` docker image. The name of the image should be
+visible at the end of the output of the command you've just run. You can configure the container by
+setting environment variables that are described in **Configuration** section below.
+
+#### Configuration
+
+Assuming you are using release built with env `prod` or the docker image, you will have access to
+the following system's environment viaribles:
+
+##### General configuration
+
+* `FENNEC_LOGLEVEL` - `debug`/`info`/`warn`/`error` - Log level of the application. `info` is the default one
+* `FENNEC_UDP_ENABLED` - `true`/`false` - Enable or disable UDP STUN/TURN interface. Enabled by default
+* `FENNEC_TCP_ENABLED` - `true`/`false` - *Not yet supported* - Enable or disable TCP STUN/TURN interface. Disabled by default.
+* `FENNEC_STUN_SECRET` - Secret that STUN/TURN clients have to use to authorize with the server
+
+##### UDP configuration
+
+The following variables configure UDP STUN/TURN interface. It must be enabled via `FENNEC_UDP_ENABLED=true` in order for those options to take effect.
+
+* `FENNEC_UDP_BIND_IP` - IP address on which fennec listens for requests. Release default is `127.0.0.1`, but in case of docker container the default is `0.0.0.0`
+* `FENNEC_UDP_PORT` - Port which server listens on for STUN/TURN requests. Default is `3478`
+* `FENNEC_UDP_REALM` - Realm name for this fennec server as defined in [TURN RFC](https://tools.ietf.org/rfc/rfc5766.txt). Default: `udp.localhost.local`
+* `FENNEC_UDP_RELAY_IP` - IP of the relay interface. All `allocate` requests will return this IP address to the client, therefore this cannot be set to `0.0.0.0`. Release default is `127.0.0.1`, but in case of docker container the default is set to the first IP address returned by `hostname -i` on the container.
+
+##### TCP configuration
+
+TCP is not yet supported.
 
 ### Checklist of STUN/TURN methods supported by Fennec
 

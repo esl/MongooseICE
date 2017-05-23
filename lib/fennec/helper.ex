@@ -24,7 +24,11 @@ defmodule Fennec.Helper do
 
   @spec string_to_inet(String.t) :: Fennec.ip
   def string_to_inet(addr) do
-    {:ok, inet_addr} = :inet.parse_address(String.to_charlist(addr))
+    {:ok, inet_addr} =
+      addr
+      |> String.trim()
+      |> String.to_charlist()
+      |> :inet.parse_address()
     inet_addr
   end
 end
