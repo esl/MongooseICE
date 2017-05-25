@@ -69,4 +69,33 @@ defmodule Fennec.TURN do
       end
     %{turn | channels: [channel | channels]}
   end
+
+  @spec has_channel(t, peer_or_number :: Fennec.address | Format.channel_number)
+    :: {:ok, t, Channel.t} | {:error, t}
+  def has_channel(turn_state, peer_or_number) do
+    now = Fennec.Time.system_time(:second)
+    with {:ok, channel}     <- get_channel(turn_state, peer_or_number),
+         {peer_ip, _}        = channel.peer,
+         true               <- channel.expiration_time > now,
+         {turn_state, true} <- has_permission(turn_state, peer_ip) do
+      {:ok, turn_state, channel}
+    else
+      :error ->
+        {:error, turn_state}
+      false ->
+        {:error, remove_channel(turn_state, peer_or_number)}
+      {turn_state, false} ->
+        {:error, turn_state}
+    end
+  end
+
+  @spec remove_channel(t, peer_or_number :: Fennec.address | Format.channel_number)
+    :: t
+  defp remove_channel(turn_state, peer_or_number) do
+    {:ok, channel} = get_channel(turn_state, peer_or_number)
+    {peer_to_channel, number_to_channel} = turn_state.channels
+    channels = {Map.delete(peer_to_channel, channel.peer),
+                Map.delete(number_to_channel, channel.number)}
+    %__MODULE__{turn_state | channels: channels}
+  end
 end
