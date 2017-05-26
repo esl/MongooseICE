@@ -3,7 +3,7 @@ defmodule Fennec.Mixfile do
 
   def project do
     [app: :fennec,
-     version: "0.2.0",
+     version: "0.3.0",
      name: "Fennec",
      description: "STUN/TURN server",
      source_url: "https://github.com/esl/fennec",

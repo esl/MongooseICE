@@ -3,7 +3,7 @@
 [![Build Status][BUILD BADGE]][BUILD LINK]
 [![Coverage Status][COVERAGE BADGE]][COVERAGE LINK]
 
-[Documentation](https://hexdocs.pm/fennec/0.2.0)
+[Documentation](https://hexdocs.pm/fennec/0.3.0)
 
 Fennec is a STUN server by [Erlang Solutions][OUR SITE] whose internals aim to be well written and tested.
 
@@ -28,7 +28,7 @@ Fennec is available on [Hex](https://hex.pm/packages/fennec). To use it, just ad
 
 ```elixir
 def deps do
-  [{:fennec, "~> 0.2.0"}]
+  [{:fennec, "~> 0.3.0"}]
 end
 ```
 
