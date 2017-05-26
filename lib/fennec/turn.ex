@@ -9,6 +9,7 @@ defmodule Fennec.TURN do
     nonce: nil, realm: nil
 
   @permission_lifetime 5 * 60 # MUST be 5mins
+  @channel_lifetime 10 * 60 # 10 minutes
 
   @type t :: %__MODULE__{
     allocation: nil | Fennec.TURN.Allocation.t,
@@ -58,8 +59,11 @@ defmodule Fennec.TURN do
     end
   end
 
-  @spec put_channel(t, Channel.t) :: t
-  def put_channel(turn, %Channel{peer: peer} = channel) do
+  @spec put_channel(t, Fennec.address, Format.channel_number) :: t
+  def put_channel(turn, peer, channel_number) do
+    now = Fennec.Time.system_time(:second)
+    channel = %Channel{peer: peer, number: channel_number,
+                       expiration_time: now + @channel_lifetime}
     channels =
       case get_channel(turn, peer) do
         {:ok, _} ->
@@ -93,9 +97,8 @@ defmodule Fennec.TURN do
     :: t
   defp remove_channel(turn_state, peer_or_number) do
     {:ok, channel} = get_channel(turn_state, peer_or_number)
-    {peer_to_channel, number_to_channel} = turn_state.channels
-    channels = {Map.delete(peer_to_channel, channel.peer),
-                Map.delete(number_to_channel, channel.number)}
-    %__MODULE__{turn_state | channels: channels}
+    new_channels =
+      Enum.reject(turn_state.channels, & &1.peer == channel.peer)
+    %__MODULE__{turn_state | channels: new_channels}
   end
 end
