@@ -94,13 +94,27 @@ defmodule Fennec.UDP.Worker do
   end
 
   def handle_peer_data(:allowed, ip, port, data, state) do
+    {turn, payload} =
+      case TURN.has_channel(state.turn, {ip, port}) do
+        {:ok, turn_state, channel} ->
+          {turn_state, channel_data(channel.number, data)}
+        {:error, turn_state} ->
+          {turn_state, data_params(ip, port, data)}
+      end
     :ok = :gen_udp.send(state.client.socket, state.client.ip, state.client.port,
-                        Jerboa.Format.encode(data_params(ip, port, data)))
-    state
+      Jerboa.Format.encode(payload))
+    %{state | turn: turn}
   end
   # This function clause is for (not) handling rejected peer's data.
-  # It exists solely to make testing easier.
-  def handle_peer_data(_, _ip, _port, _data, state), do: state
+  # It exists to make testing easier and to delete expired channels.
+  def handle_peer_data(_, ip, port, _data, state) do
+    turn_state =
+      case TURN.has_channel(state.turn, {ip, port}) do
+        {:ok, turn, _} -> turn
+        {:error, turn} -> turn
+      end
+    %{state | turn: turn_state}
+  end
 
   # Extracted as a separate function,
   # as it's easier to trace for side effects this way.
@@ -137,5 +151,10 @@ defmodule Fennec.UDP.Worker do
     |> P.put_method(:data)
     |> P.put_attr(%Data{content: data})
     |> P.put_attr(XORPeerAddress.new(ip, port))
+  end
+
+  defp channel_data(channel_number, data) do
+    alias Jerboa.ChannelData
+    %ChannelData{channel_number: channel_number, data: data}
   end
 end
