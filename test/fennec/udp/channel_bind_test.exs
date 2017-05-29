@@ -13,11 +13,12 @@ defmodule Fennec.UDP.ChannelBindTest do
 
   setup ctx do
     udp = UDP.connect({127, 0, 0, 1}, {127, 0, 0, 1}, 1)
+    allocate_time = Fennec.Time.system_time(:second)
     if ctx[:allocate], do: UDP.allocate(udp)
     on_exit fn ->
       UDP.close(udp)
     end
-    {:ok, udp: udp}
+    {:ok, udp: udp, allocate_time: allocate_time}
   end
 
   test "fails without active allocation", %{udp: udp} do
@@ -98,7 +99,8 @@ defmodule Fennec.UDP.ChannelBindTest do
   end
 
   @tag :allocate
-  test "refreshes given previously bound peer and channel number", %{udp: udp} do
+  test "refreshes given previously bound peer and channel number",
+    %{udp: udp, allocate_time: allocate_time} do
     worker = UDP.worker(udp, 0)
     peer_ip = {127, 0, 0, 1}
     peer_port = 12_345
@@ -112,17 +114,22 @@ defmodule Fennec.UDP.ChannelBindTest do
     req1 = UDP.channel_bind_request(id1, attrs)
     req2 = UDP.channel_bind_request(id2, attrs)
 
-    # 1st request
-    no_auth(UDP.communicate(udp, 0, req1))
-    assert [channel] = GenServer.call(worker, :get_channels)
-    assert channel.peer == {peer_ip, peer_port}
-    assert channel.number == channel_number
-    expiration_time1 = channel.expiration_time
+    base_time = allocate_time + 10
+    expiration_time1 =
+      with_mock Fennec.Time, [:passthrough], [system_time: fn (:second) ->
+                                               base_time end] do
+        # 1st request
+        no_auth(UDP.communicate(udp, 0, req1))
+        assert [channel] = GenServer.call(worker, :get_channels)
+        assert channel.peer == {peer_ip, peer_port}
+        assert channel.number == channel_number
+        channel.expiration_time
+      end
 
     # 2nd request
     time_passed = 2 * 60
     with_mock Fennec.Time, [:passthrough], [system_time: fn (:second) ->
-      :meck.passthrough([:second]) + time_passed
+      base_time + time_passed
     end] do
       resp = no_auth(UDP.communicate(udp, 0, req2))
       params = Format.decode!(resp)
