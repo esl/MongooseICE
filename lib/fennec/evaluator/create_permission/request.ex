@@ -7,8 +7,6 @@ defmodule Fennec.Evaluator.CreatePermission.Request do
   alias Jerboa.Params
   alias Fennec.TURN
 
-  @lifetime 5 * 60 # MUST be 5mins
-
   @spec service(Params.t, Fennec.client_info, Fennec.UDP.server_opts, TURN.t)
     :: {Params.t, TURN.t}
   def service(params, _client, _server, turn_state) do
@@ -46,19 +44,11 @@ defmodule Fennec.Evaluator.CreatePermission.Request do
   end
 
   defp create_permissions(params, _state, turn_state) do
-    expire_at = Fennec.Time.system_time(:second) + @lifetime
     peers = Params.get_attrs(params, Attribute.XORPeerAddress)
-    added_pemissions =
-      for peer = %Attribute.XORPeerAddress{} <- peers do
-        {peer.address, expire_at}
-      end
-
-    new_permissions =
-      added_pemissions
-      |> Enum.into(turn_state.permissions)
-
-    # Construct new protocol state and response for the client
-    new_turn_state = %TURN{turn_state | permissions: new_permissions}
+    new_turn_state =
+      peers
+      |> Enum.map(& Map.fetch!(&1, :address))
+      |> Enum.reduce(turn_state, & TURN.put_permission(&2, &1))
     new_params = %Params{params | attributes: []}
     {:respond, {new_params, new_turn_state}}
   end

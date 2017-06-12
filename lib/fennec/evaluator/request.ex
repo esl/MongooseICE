@@ -21,6 +21,7 @@ defmodule Fennec.Evaluator.Request do
       :allocate           -> Evaluator.Allocate.Request
       :create_permission  -> Evaluator.CreatePermission.Request
       :refresh            -> Evaluator.Refresh.Request
+      :channel_bind       -> Evaluator.ChannelBind.Request
     end
   end
 

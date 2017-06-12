@@ -10,6 +10,7 @@ defmodule Fennec.Auth do
 
   @nonce_bytes 48
   @nonce_lifetime_seconds 60 * 60 # 1h
+  @authorized_methods [:allocate, :refresh, :create_permission, :channel_bind]
 
   def get_secret do
     Confex.get(:fennec, :secret)
@@ -75,9 +76,8 @@ defmodule Fennec.Auth do
     should_authorize?(Params.get_class(params), Params.get_method(params))
   end
 
-  defp should_authorize?(:request, :allocate), do: true
-  defp should_authorize?(:request, :create_permission), do: true
-  defp should_authorize?(:request, :refresh), do: true
+  defp should_authorize?(:request, method)
+       when method in @authorized_methods, do: true
   defp should_authorize?(_, _), do: false
 
   defp error_params(code_or_name, params, server, turn_state) do

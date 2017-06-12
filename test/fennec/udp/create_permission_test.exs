@@ -27,14 +27,14 @@ defmodule Fennec.UDP.CreatePermissionTest do
 
     test "contains no permissions after allocate", ctx do
       udp = ctx.udp
-      worker = worker(udp, 0)
+      worker = UDP.worker(udp, 0)
 
       assert %{} == GenServer.call(worker, :get_permissions)
     end
 
     test "contains permission after create_permission request", ctx do
       udp = ctx.udp
-      worker = worker(udp, 0)
+      worker = UDP.worker(udp, 0)
 
       UDP.create_permissions(udp, [{127, 0, 10, 0}])
       assert %{{127, 0, 10, 0} => expire_at} =
@@ -46,7 +46,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
 
     test "contains several permission after create_permission request", ctx do
       udp = ctx.udp
-      worker = worker(udp, 0)
+      worker = UDP.worker(udp, 0)
 
       UDP.create_permissions(udp, [{127, 0, 10, 0}, {127, 0, 10, 1}])
 
@@ -73,7 +73,7 @@ defmodule Fennec.UDP.CreatePermissionTest do
 
     test "contains refreshed permission after second create_permission", ctx do
       udp = ctx.udp
-      worker = worker(udp, 0)
+      worker = UDP.worker(udp, 0)
 
       UDP.create_permissions(udp, [{127, 0, 10, 0}])
       assert %{{127, 0, 10, 0} => expire_at_1} =
@@ -92,16 +92,6 @@ defmodule Fennec.UDP.CreatePermissionTest do
         assert expire_at_2 - expire_at_1 >= time_passed
         assert expire_at_2 - expire_at_1 < 2 * time_passed
       end
-    end
-
-    defp worker(udp, client_id) do
-      alias Fennec.UDP.Dispatcher
-
-      base_name = Fennec.UDP.base_name(udp.server_port)
-      dispatcher = Fennec.UDP.dispatcher_name(base_name)
-      [{_, worker}] = Dispatcher.lookup_worker(dispatcher, udp.client_address,
-                                               UDP.client_port(udp, client_id))
-      worker
     end
   end
 

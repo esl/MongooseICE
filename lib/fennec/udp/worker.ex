@@ -52,6 +52,9 @@ defmodule Fennec.UDP.Worker do
   def handle_call(:get_permissions, _from, state) do
     {:reply, state.turn.permissions, state, timeout(state)}
   end
+  def handle_call(:get_channels, _from, state) do
+    {:reply, state.turn.channels, state}
+  end
 
   def handle_cast({:process_data, data}, state) do
     state = maybe_update_nonce(state)
