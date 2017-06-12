@@ -53,8 +53,7 @@ defmodule Fennec.UDP.Worker do
     {:reply, state.turn.permissions, state, timeout(state)}
   end
   def handle_call(:get_channels, _from, state) do
-    {_, channel_map} = state.turn.channels
-    {:reply, Map.values(channel_map), state}
+    {:reply, state.turn.channels, state}
   end
 
   def handle_cast({:process_data, data}, state) do
