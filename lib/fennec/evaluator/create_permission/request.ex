@@ -45,10 +45,10 @@ defmodule Fennec.Evaluator.CreatePermission.Request do
 
   defp create_permissions(params, _state, turn_state) do
     peers = Params.get_attrs(params, Attribute.XORPeerAddress)
-    new_turn_state = Enum.reduce(peers, turn_state,
-      fn peer, acc ->
-        TURN.put_permission(acc, peer.address)
-      end)
+    new_turn_state =
+      peers
+      |> Enum.map(& Map.fetch!(&1, :address))
+      |> Enum.reduce(turn_state, & TURN.put_permission(&2, &1))
     new_params = %Params{params | attributes: []}
     {:respond, {new_params, new_turn_state}}
   end
