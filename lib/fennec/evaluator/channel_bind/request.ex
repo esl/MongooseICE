@@ -89,15 +89,15 @@ defmodule Fennec.Evaluator.ChannelBind.Request do
   defp bind_channel(params, context, turn_state) do
     %{peer: peer, channel_number: channel_number, refresh?: refresh?} = context
     {ip, port} = peer
-      if refresh? do
+      _ = if refresh? do
         Logger.debug fn ->
           "Refreshing channel ##{channel_number} bound to peer #{ip}:#{port}"
         end
-    else
-      Logger.debug fn ->
-        "Binding channel ##{channel_number} to peer #{ip}:#{port}"
+      else
+        Logger.debug fn ->
+          "Binding channel ##{channel_number} to peer #{ip}:#{port}"
+        end
       end
-    end
       new_turn_state =
         create_or_update_channel(turn_state, peer, channel_number)
         |> TURN.put_permission(ip)
