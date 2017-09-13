@@ -9,7 +9,7 @@ defmodule Fennec.TURN do
     nonce: nil, realm: nil
 
   @permission_lifetime 5 * 60 # MUST be 5mins
-  @channel_lifetime 10 * 60 # 10 minutes
+  @channel_lifetime 10 * 60   # MUST be 10 minutes
 
   @type t :: %__MODULE__{
     allocation: nil | Fennec.TURN.Allocation.t,
