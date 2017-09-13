@@ -3,9 +3,10 @@ defmodule Helper.UDP do
   use Helper.Macros
 
   alias Jerboa.Params
+  alias Jerboa.ChannelData
   alias Jerboa.Format
   alias Jerboa.Format.Body.Attribute.{Username, RequestedTransport,
-                                      XORPeerAddress}
+                                      XORPeerAddress, ChannelNumber}
 
   @recv_timeout 5_000
   @default_user "user"
@@ -75,6 +76,11 @@ defmodule Helper.UDP do
     |> Params.set_attrs(attrs)
   end
 
+  def channel_data(channel_number, data) do
+    %ChannelData{channel_number: channel_number, data: data}
+    |> Format.encode()
+  end
+
   def peers(peers) do
     for ip <- peers do
       %XORPeerAddress{
@@ -125,6 +131,18 @@ defmodule Helper.UDP do
             identifier: ^id} = params
   end
 
+  def channel_bind(udp, channel_number, peer_ip, peer_port) do
+    id = Params.generate_id()
+    attrs = [XORPeerAddress.new(peer_ip, peer_port),
+             %ChannelNumber{number: channel_number}]
+    req = channel_bind_request(id, attrs)
+    resp = no_auth(communicate(udp, 0, req))
+    params = Format.decode!(resp)
+    %Params{class: :success,
+            method: :channel_bind,
+            identifier: ^id} = params
+  end
+
   ## Communication
 
   def setup_connection(_ctx, family \\ :ipv4) do
@@ -160,6 +178,14 @@ defmodule Helper.UDP do
       client_port_base: client_port,
       sockets: sockets
     }
+  end
+
+  def socket(udp, client_id) do
+    Enum.at(udp.sockets, client_id)
+  end
+
+  def port(udp, client_id) do
+    udp.client_port_base + client_id + 1
   end
 
   def close(%{sockets: sockets}) do

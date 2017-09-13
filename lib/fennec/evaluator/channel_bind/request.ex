@@ -7,13 +7,10 @@ defmodule Fennec.Evaluator.ChannelBind.Request do
   alias Jerboa.Format.Body.Attribute.ChannelNumber
   alias Fennec.UDP
   alias Fennec.TURN
-  alias Fennec.TURN.Channel
 
   import Fennec.Evaluator.Helper, only: [maybe: 3, maybe: 2]
 
   require Logger
-
-  @lifetime 10 * 60 # 10 minutes
 
   @spec service(Params.t, Fennec.client_info, UDP.server_opts, TURN.t)
     :: {Params.t, TURN.t}
@@ -99,7 +96,8 @@ defmodule Fennec.Evaluator.ChannelBind.Request do
         end
       end
       new_turn_state =
-        create_or_update_channel(turn_state, peer, channel_number)
+        turn_state
+        |> TURN.put_channel(peer, channel_number)
         |> TURN.put_permission(ip)
     {:respond, {Params.set_attrs(params, []), new_turn_state}}
   end
@@ -134,14 +132,5 @@ defmodule Fennec.Evaluator.ChannelBind.Request do
       {:ok, _} -> true
       _        -> false
     end
-  end
-
-  @spec create_or_update_channel(TURN.t, peer :: Fennec.address,
-    Format.channel_number) :: TURN.t
-  defp create_or_update_channel(turn_state, peer, channel_number) do
-    expire_at = Fennec.Time.system_time(:second) + @lifetime
-    channel = %Channel{peer: peer, number: channel_number,
-                       expiration_time: expire_at}
-    TURN.put_channel(turn_state, channel)
   end
 end
