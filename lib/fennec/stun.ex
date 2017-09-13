@@ -15,7 +15,7 @@ defmodule Fennec.STUN do
   of the `Fennec.Evaluator.service/4` is then encoded and returned from this function.
   """
   @spec process_message(binary, Fennec.client_info, UDP.server_opts, TURN.t) ::
-    {:ok, {binary, %TURN{}}} | {:ok, :void} | {:error, reason :: term}
+    {:ok, {binary, TURN.t}} | {:ok, {:void, TURN.t}} | {:error, reason :: term}
   def process_message(data, client, server, turn_state) do
     with secret        =  Auth.get_secret(),
          {:ok, %Params{} = params} <- Jerboa.Format.decode(data, [secret: secret]),
