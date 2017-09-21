@@ -9,7 +9,7 @@ defmodule Helper.Macros do
 
   defmacro no_auth(do_something) do
     quote do
-      Mock.with_mock Fennec.Auth, [:passthrough], [
+      Mock.with_mock MongooseICE.Auth, [:passthrough], [
         maybe: fn(_, p, _, _) -> {:ok, p} end
       ] do
        unquote do_something
@@ -32,8 +32,8 @@ defmodule Helper.Macros do
     alias Helper.UDP
     alias Jerboa.Params
     quote do
-      # First, we need to mock Fennec.Evaluator.on_result to gather results
-      Mock.with_mock Fennec.Evaluator, [:passthrough], [] do
+      # First, we need to mock MongooseICE.Evaluator.on_result to gather results
+      Mock.with_mock MongooseICE.Evaluator, [:passthrough], [] do
         # Then we send the request
         :ok = UDP.send(unquote(udp), unquote(client_id), unquote(req))
         case Params.get_class(Jerboa.Format.decode!(unquote(req))) do
@@ -52,11 +52,11 @@ defmodule Helper.Macros do
   end
 
   defp receive_indication_response() do
-    # For indication we need to get result from Fennec.Evaluator.on_result
+    # For indication we need to get result from MongooseICE.Evaluator.on_result
     # call history
     quote do
-      assert eventually Mock.called Fennec.Evaluator.on_result(:indication, :_)
-      history = :meck.history(Fennec.Evaluator)
+      assert eventually Mock.called MongooseICE.Evaluator.on_result(:indication, :_)
+      history = :meck.history(MongooseICE.Evaluator)
       history = # Filter only calls to on_result/2
         Enum.filter(history, fn(entry) ->
           case entry do

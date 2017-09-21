@@ -1,7 +1,7 @@
 use Mix.Config
 
-config :fennec, secret: "abc"
-config :fennec, servers: [
+config :mongooseice, secret: "abc"
+config :mongooseice, servers: [
   {:udp, [
     ip:     {127, 0, 0, 1},
     port:   12_100,

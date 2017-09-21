@@ -38,6 +38,6 @@ end
 # when running `mix release`, the first release in the file
 # will be used by default
 
-release :fennec do
-  set version: current_version(:fennec)
+release :mongooseice do
+  set version: current_version(:mongooseice)
 end

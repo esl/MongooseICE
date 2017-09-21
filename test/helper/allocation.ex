@@ -11,8 +11,8 @@ defmodule Helper.Allocation do
 
   defp udp_worker_sup(port) do
     port
-    |> Fennec.UDP.base_name()
-    |> Fennec.UDP.worker_sup_name()
+    |> MongooseICE.UDP.base_name()
+    |> MongooseICE.UDP.worker_sup_name()
   end
 
 end

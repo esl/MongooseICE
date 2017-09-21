@@ -1,4 +1,4 @@
-defmodule Fennec.Test.Helper do
+defmodule MongooseICE.Test.Helper do
   @moduledoc false
 
   defmodule Server do

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-APP_NAME='fennec'
+APP_NAME='mongooseice'
 
 # Skip this step for jobs that don't run exunit
 test "${PRESET}" == "test" || exit 0
