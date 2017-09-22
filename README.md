@@ -111,7 +111,7 @@ TCP is not yet supported.
 - [x] Send
 - [x] Data
 - [x] CreatePermission
-- [ ] ChannelBind
+- [x] ChannelBind
 
 ### Checklist of STUN/TURN attributes supported by Fennec
 
@@ -123,7 +123,7 @@ TCP is not yet supported.
 - [x] UNKNOWN-ATTRIBUTES
 - [x] REALM
 - [x] NONCE
-- [ ] CHANNEL-NUMBER
+- [x] CHANNEL-NUMBER
 - [x] LIFETIME
 - [x] XOR-PEER-ADDRESS
 - [x] DATA
