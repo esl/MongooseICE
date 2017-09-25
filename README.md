@@ -3,7 +3,7 @@
 [![Build Status][BUILD BADGE]][BUILD LINK]
 [![Coverage Status][COVERAGE BADGE]][COVERAGE LINK]
 
-[Documentation](https://hexdocs.pm/mongooseice/0.3.0)
+[Documentation](https://hexdocs.pm/mongooseice/0.4.0)
 
 MongooseICE is a STUN server by [Erlang Solutions][OUR SITE] whose internals aim to be well written and tested.
 
@@ -28,7 +28,9 @@ MongooseICE is available on [Hex](https://hex.pm/packages/mongooseice). To use i
 
 ```elixir
 def deps do
-  [{:mongooseice, "~> 0.3.0"}]
+  [
+    {:mongooseice, "~> 0.4.0"}
+  ]
 end
 ```
 
