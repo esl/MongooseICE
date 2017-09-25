@@ -1,12 +1,12 @@
-defmodule Fennec.Mixfile do
+defmodule MongooseICE.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :fennec,
+    [app: :mongooseice,
      version: "0.3.0",
-     name: "Fennec",
+     name: "MongooseICE",
      description: "STUN/TURN server",
-     source_url: "https://github.com/esl/fennec",
+     source_url: "https://github.com/esl/mongooseice",
      elixir: "~> 1.4",
      elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
@@ -21,7 +21,7 @@ defmodule Fennec.Mixfile do
 
   def application do
     [extra_applications: [:logger, :runtime_tools, :crypto],
-     mod: {Fennec.Application, []}]
+     mod: {MongooseICE.Application, []}]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/helper.ex"]
@@ -42,12 +42,12 @@ defmodule Fennec.Mixfile do
   defp package do
     [licenses: ["Apache 2.0"],
      maintainers: ["Erlang Solutions"],
-     links: %{"GitHub" => "https://github.com/esl/fennec"}]
+     links: %{"GitHub" => "https://github.com/esl/mongooseice"}]
   end
 
   defp docs do
-    [main: "Fennec",
-     extras: ["README.md": [title: "Fennec"]]]
+    [main: "MongooseICE",
+     extras: ["README.md": [title: "MongooseICE"]]]
   end
 
   defp dialyzer do

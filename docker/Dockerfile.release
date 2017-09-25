@@ -13,19 +13,19 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     vim && \
     apt-get clean
 
-ENV FENNEC_UDP_BIND_IP=0.0.0.0 FENNEC_UDP_PORT=3478 MIX_ENV=prod \
-    FENNEC_TCP_BIND_IP=0.0.0.0 FENNEC_TCP_PORT=3479 MIX_ENV=prod \
+ENV MONGOOSEICE_UDP_BIND_IP=0.0.0.0 MONGOOSEICE_UDP_PORT=3478 MIX_ENV=prod \
+    MONGOOSEICE_TCP_BIND_IP=0.0.0.0 MONGOOSEICE_TCP_PORT=3479 MIX_ENV=prod \
     REPLACE_OS_VARS=true SHELL=/bin/bash
 
 WORKDIR /opt/app
 
-ADD fennec.tar.gz ./
+ADD mongooseice.tar.gz ./
 ADD docker/start.sh /opt/app/start.sh
 RUN chmod +x /opt/app/start.sh
 
 # Move priv dir
-RUN mv $(find lib -name fennec-*)/priv .
-RUN ln -s $(pwd)/priv $(find lib -name fennec-*)/priv
+RUN mv $(find lib -name mongooseice-*)/priv .
+RUN ln -s $(pwd)/priv $(find lib -name mongooseice-*)/priv
 
 VOLUME /opt/app/priv
 

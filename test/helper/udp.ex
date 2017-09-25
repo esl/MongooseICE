@@ -86,7 +86,7 @@ defmodule Helper.UDP do
       %XORPeerAddress{
         address: ip,
         port: 0,
-        family: Fennec.Evaluator.Helper.family(ip)
+        family: MongooseICE.Evaluator.Helper.family(ip)
       }
     end
   end
@@ -159,8 +159,8 @@ defmodule Helper.UDP do
   def connect(server_address, client_address, client_count) do
     server_port = Helper.PortMaster.checkout_port(:server)
     client_port = Helper.PortMaster.checkout_port(:client)
-    Application.put_env(:fennec, :relay_addr, server_address)
-    Fennec.UDP.start_link(ip: server_address, port: server_port,
+    Application.put_env(:mongooseice, :relay_addr, server_address)
+    MongooseICE.UDP.start_link(ip: server_address, port: server_port,
                           relay_ip: server_address)
 
     sockets =
@@ -218,10 +218,10 @@ defmodule Helper.UDP do
   end
 
   def worker(udp, client_id) do
-      alias Fennec.UDP.Dispatcher
+      alias MongooseICE.UDP.Dispatcher
 
-      base_name = Fennec.UDP.base_name(udp.server_port)
-      dispatcher = Fennec.UDP.dispatcher_name(base_name)
+      base_name = MongooseICE.UDP.base_name(udp.server_port)
+      dispatcher = MongooseICE.UDP.dispatcher_name(base_name)
       [{_, worker}] = Dispatcher.lookup_worker(dispatcher, udp.client_address,
         client_port(udp, client_id))
       worker
