@@ -7,6 +7,7 @@ defmodule MongooseICE.Mixfile do
      name: "MongooseICE",
      description: "STUN/TURN server",
      source_url: "https://github.com/esl/mongooseice",
+     homepage_url: "http://mongooseim.readthedocs.io",
      elixir: "~> 1.4",
      elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
@@ -47,6 +48,7 @@ defmodule MongooseICE.Mixfile do
 
   defp docs do
     [main: "MongooseICE",
+     logo: "static/mongooseim_logo.png",
      extras: ["README.md": [title: "MongooseICE"]]]
   end
 
