@@ -6,24 +6,36 @@ defmodule MongooseICE.UDP.AuthTemplate do
       import unquote __MODULE__
       import Mock
       use Helper.Macros
+      alias Jerboa.Format.Body.Attribute.Nonce
 
       @max_value_bytes 763 - 1
       @max_value_chars 128 - 1
       @valid_secret "abc"
       @invalid_secret "abcd"
+
+      defp get_nonce(udp) do
+        id = Jerboa.Params.generate_id()
+        req = Helper.UDP.allocate_request(id)
+        resp = communicate_all(udp, 0, req)
+        Jerboa.Params.get_attr(Jerboa.Format.decode!(resp), Nonce)
+      end
     end
   end
 
   defmacro test_auth_for(request, base_attrs) do
+    alias Helper.UDP
+    alias Jerboa.Params
+    alias Jerboa.Format
+    alias Jerboa.Format.Body.Attribute.{
+      Username,
+      ErrorCode,
+      Nonce,
+      Realm
+    }
+
     request_str = Atom.to_string(request)
     params_fun = String.to_atom(~s"#{request}_params")
     quote do
-      alias Helper.UDP
-      alias Jerboa.Params
-      alias Jerboa.Format
-      alias Jerboa.Format.Body.Attribute.{Username, ErrorCode,
-                                          RequestedTransport, Nonce, Realm}
-
       describe unquote(request_str) <> " request" do
         setup do
           Application.put_env(:mongooseice, :secret, @valid_secret)
@@ -283,13 +295,6 @@ defmodule MongooseICE.UDP.AuthTemplate do
                          attributes: attrs} = params
           assert %ErrorCode{code: 441} = Params.get_attr(params, ErrorCode)
         end
-      end
-
-      defp get_nonce(udp) do
-        id = Params.generate_id()
-        req = UDP.allocate_request(id)
-        resp = communicate_all(udp, 0, req)
-        Params.get_attr(Format.decode!(resp), Nonce)
       end
     end
   end

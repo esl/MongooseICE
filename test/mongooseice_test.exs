@@ -9,7 +9,6 @@ defmodule MongooseICETest do
   setup do
 
     ## Given:
-    import MongooseICE.Test.Helper.Server, only: [configuration: 1]
     port = PortMaster.checkout_port(:server)
     MongooseICE.UDP.start_link(ip: @server_addr, port: port)
     Application.put_env(:mongooseice, :secret, "abc")
