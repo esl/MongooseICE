@@ -241,7 +241,7 @@ defmodule MongooseICE.UDP.AllocateTest do
       end
     end
 
-    test "expires if original allocation is deleted", ctx do
+    test "expires if original allocation is deleted" do
       ## given a TURN server
       addr = {127, 0, 0, 1}
       ## given the allocation
@@ -276,7 +276,7 @@ defmodule MongooseICE.UDP.AllocateTest do
       assert %ErrorCode{name: :insufficient_capacity} = error
     end
 
-    test "expires if original allocation expires", ctx do
+    test "expires if original allocation expires" do
       ## given a TURN server
       addr = {127, 0, 0, 1}
       ## given the allocation
