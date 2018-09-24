@@ -11,6 +11,7 @@ defmodule MongooseICE.Evaluator.Allocate.Request do
   alias Jerboa.Params
   alias MongooseICE.TURN
   alias MongooseICE.TURN.Reservation
+  alias MongooseICE.UDP
 
   require Integer
   require Logger
