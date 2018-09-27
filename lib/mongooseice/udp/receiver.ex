@@ -17,7 +17,7 @@ defmodule MongooseICE.UDP.Receiver do
     worker_sup = MongooseICE.UDP.worker_sup_name(base_name)
     dispatcher = MongooseICE.UDP.dispatcher_name(base_name)
     state = %{dispatcher: dispatcher, worker_sup: worker_sup, socket: nil}
-    socket_opts = [:binary, active: true, ip: opts[:ip]]
+    socket_opts = [:binary, active: burst_length(), ip: opts[:ip]]
     case :gen_udp.open(opts[:port], socket_opts) do
       {:ok, socket} ->
         {:ok, %{state | socket: socket}}
@@ -31,5 +31,18 @@ defmodule MongooseICE.UDP.Receiver do
     client = %{socket: socket, ip: ip, port: port}
     _ = MongooseICE.UDP.Dispatcher.dispatch(state.dispatcher, state.worker_sup, client, data)
     {:noreply, state}
+  end
+
+  def handle_info({:udp_passive, socket}, state) do
+    require Logger
+
+    n = burst_length()
+    Logger.debug(~s"Processed #{n} peer packets")
+    :inet.setopts(socket, [active: n])
+    {:noreply, state}
+  end
+
+  defp burst_length do
+    500
   end
 end
