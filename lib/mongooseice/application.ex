@@ -7,7 +7,7 @@ defmodule MongooseICE.Application do
   use Application
 
   def start(_type, _args) do
-    loglevel = Confex.get(@app, :loglevel, :info)
+    loglevel = Confex.get_env(@app, :loglevel, :info)
     Logger.configure(level: loglevel)
 
     opts = [strategy: :one_for_one, name: MongooseICE.Supervisor]
@@ -16,14 +16,14 @@ defmodule MongooseICE.Application do
 
   defp servers do
     @app
-    |> Confex.get_map(:servers, [])
+    |> Confex.get_env(:servers, [])
     |> Enum.filter(fn({type, _}) -> is_proto_enabled(type) end)
     |> Enum.map(&make_server/1)
   end
 
   defp is_proto_enabled(type) do
     @app
-    |> Confex.get(String.to_atom(~s"#{type}_enabled"), true)
+    |> Confex.get_env(String.to_atom(~s"#{type}_enabled"), true)
   end
 
   defp make_server({type, config}) do

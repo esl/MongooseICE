@@ -3,12 +3,12 @@ defmodule MongooseICE.Mixfile do
 
   def project do
     [app: :mongooseice,
-     version: "0.4.0",
+     version: "0.4.1",
      name: "MongooseICE",
      description: "STUN/TURN server",
      source_url: "https://github.com/esl/mongooseice",
      homepage_url: "http://mongooseim.readthedocs.io",
-     elixir: "~> 1.4",
+     elixir: "~> 1.6",
      elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -29,14 +29,15 @@ defmodule MongooseICE.Mixfile do
   defp elixirc_paths(_),     do: ["lib"]
 
   defp deps do
-    [{:confex, "~> 2.0.1"},
-     {:mix_docker, "~> 0.3.0", runtime: false},
+    [{:confex, "~> 3.4.0"},
+     {:mix_docker, "~> 0.5.0", runtime: false},
      {:ex_doc, "~> 0.14", runtime: false, only: :dev},
-     {:credo, "~> 0.5", runtime: false, only: :dev},
-     {:dialyxir, "~> 0.4", runtime: false, only: :dev},
+     {:credo, "~> 1.0", runtime: false, only: :dev},
+     {:dialyxir, "~> 1.0-pre", runtime: false, only: :dev},
      {:excoveralls, "~> 0.5", runtime: false, only: :test},
      {:inch_ex, "~> 0.5", runtime: false, only: :dev},
-     {:mock, "~> 0.2.0", only: :test},
+     {:mock, "~> 0.3.3", only: :test},
+     {:distillery, "~> 2.0", override: true},
      {:jerboa, "~> 0.3"}]
   end
 
@@ -63,7 +64,7 @@ defmodule MongooseICE.Mixfile do
   end
 
   defp preferred_cli_env do
-    ["coveralls": :test, "coveralls.detail": :test,
+    [coveralls: :test, "coveralls.detail": :test,
      "coveralls.travis": :test, "coveralls.html": :test]
   end
 end

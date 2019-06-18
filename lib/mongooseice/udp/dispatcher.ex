@@ -8,7 +8,7 @@ defmodule MongooseICE.UDP.Dispatcher do
 
   def start_link(base_name) do
     name = UDP.dispatcher_name(base_name)
-    Registry.start_link(:unique, name)
+    Registry.start_link(keys: :unique, name: name)
   end
 
   # Dispatches data to worker associated with client's

@@ -9,11 +9,7 @@ defmodule MongooseICE.UDP.RefreshTest do
     alias Jerboa.Format.Body.Attribute
     alias Jerboa.Params
 
-    import Mock, only: [
-      called: 1,
-      with_mock: 3,
-      with_mocks: 2
-    ]
+    import Mock
 
     setup ctx do
       {:ok, [udp: UDP.setup_connection(ctx)]}
