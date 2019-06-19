@@ -11,6 +11,7 @@ defmodule MongooseICE.Evaluator.Allocate.Request do
   alias Jerboa.Params
   alias MongooseICE.TURN
   alias MongooseICE.TURN.Reservation
+  alias MongooseICE.UDP
 
   require Integer
   require Logger
@@ -175,8 +176,7 @@ defmodule MongooseICE.Evaluator.Allocate.Request do
   end
 
   defp udp_opts(server) do
-    ## TODO: {:active, true} is not an option for a production system!
-    [:binary, active: true, ip: server[:relay_ip]]
+    [:binary, active: UDP.Worker.burst_length(), ip: server[:relay_ip]]
   end
 
   defp verify_existing_allocation(params, state, client, server, turn_state) do
