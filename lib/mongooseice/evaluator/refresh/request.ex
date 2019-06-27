@@ -48,7 +48,7 @@ defmodule MongooseICE.Evaluator.Refresh.Request do
       |> min(Allocation.maximum_lifetime())
       |> max(Allocation.default_lifetime())
     new_params = %Params{ params | attributes: [%Lifetime{duration: lifetime}] }
-    now = MongooseICE.Time.system_time(:seconds)
+    now = MongooseICE.Time.system_time(:second)
     new_a = %Allocation{ a | expire_at: now + lifetime }
     {:respond, {new_params, %TURN{ t | allocation: new_a }}}
   end

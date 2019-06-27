@@ -13,7 +13,7 @@ defmodule MongooseICE.Auth do
   @authorized_methods [:allocate, :refresh, :create_permission, :channel_bind]
 
   def get_secret do
-    Confex.get(:mongooseice, :secret)
+    Confex.get_env(:mongooseice, :secret)
   end
 
   def nonce_lifetime() do

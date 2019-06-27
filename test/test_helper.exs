@@ -1,4 +1,4 @@
-ExUnit.start(exclude: [:system])
+ExUnit.start(exclude: [:system], capture_log: true)
 # These files have to be required here, since the code requires ExUnit
 # application to be running while loading (use ExUnit.Case).
 # But first we need to load Helper.Macros module, since the other ones
