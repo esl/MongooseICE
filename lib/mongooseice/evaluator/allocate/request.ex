@@ -141,7 +141,7 @@ defmodule MongooseICE.Evaluator.Allocate.Request do
           open_this_relay(params, new_state, server)
         end
       {_, {:error, reason}} ->
-        Logger.warn(":gen_udp.open/2 error: #{reason}, port: 0, opts: #{opts}")
+        Logger.warn(":gen_udp.open/2 error: #{inspect(reason)}, port: 0, opts: #{inspect(opts)}")
         {:error, ErrorCode.new(:insufficient_capacity)}
     end
   end
@@ -176,7 +176,7 @@ defmodule MongooseICE.Evaluator.Allocate.Request do
   end
 
   defp udp_opts(server) do
-    [:binary, active: UDP.Worker.burst_length(), ip: server[:relay_ip]]
+    [:binary, active: UDP.Worker.burst_length(), ip: {0, 0, 0, 0}]
   end
 
   defp verify_existing_allocation(params, state, client, server, turn_state) do
