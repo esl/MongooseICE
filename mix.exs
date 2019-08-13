@@ -30,14 +30,13 @@ defmodule MongooseICE.Mixfile do
 
   defp deps do
     [{:confex, "~> 3.4.0"},
-     {:mix_docker, "~> 0.5.0", runtime: false},
      {:ex_doc, "~> 0.14", runtime: false, only: :dev},
      {:credo, "~> 1.0", runtime: false, only: :dev},
      {:dialyxir, "~> 1.0-pre", runtime: false, only: :dev},
      {:excoveralls, "~> 0.5", runtime: false, only: :test},
      {:inch_ex, "~> 0.5", runtime: false, only: :dev},
      {:mock, "~> 0.3.3", only: :test},
-     {:distillery, "~> 2.0", override: true},
+     {:distillery, "~> 2.1"},
      {:jerboa, "~> 0.3"}]
   end
 

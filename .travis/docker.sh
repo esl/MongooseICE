@@ -6,8 +6,7 @@ APP_NAME='mongooseice'
 # Skip this step for jobs that don't run exunit
 test "${PRESET}" == "test" || exit 0
 
-MIX_ENV=prod mix docker.build
-MIX_ENV=prod mix docker.release
+docker build . -f docker/Dockerfile -t ${APP_NAME}:release
 
 DOCKERHUB_TAG="${TRAVIS_BRANCH//\//-}"
 
