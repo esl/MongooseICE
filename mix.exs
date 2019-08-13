@@ -3,7 +3,7 @@ defmodule MongooseICE.Mixfile do
 
   def project do
     [app: :mongooseice,
-     version: "0.4.1",
+     version: "0.4.2",
      name: "MongooseICE",
      description: "STUN/TURN server",
      source_url: "https://github.com/esl/mongooseice",
@@ -33,7 +33,7 @@ defmodule MongooseICE.Mixfile do
      {:ex_doc, "~> 0.14", runtime: false, only: :dev},
      {:credo, "~> 1.0", runtime: false, only: :dev},
      {:dialyxir, "~> 1.0-pre", runtime: false, only: :dev},
-     {:excoveralls, "~> 0.5", runtime: false, only: :test},
+     {:excoveralls, "~> 0.11", runtime: false, only: :test},
      {:inch_ex, "~> 0.5", runtime: false, only: :dev},
      {:mock, "~> 0.3.3", only: :test},
      {:distillery, "~> 2.1"},
