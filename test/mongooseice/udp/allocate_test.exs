@@ -132,7 +132,7 @@ defmodule MongooseICE.UDP.AllocateTest do
 
     test "allocates an even port" do
       addr = {127, 0, 0, 1}
-      for _ <- 1..100 do
+      for _ <- 1..10 do
         udp = UDP.connect(addr, addr, 1)
         id = Params.generate_id()
         req = UDP.allocate_request(id, [

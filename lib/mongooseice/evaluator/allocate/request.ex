@@ -49,11 +49,6 @@ defmodule MongooseICE.Evaluator.Allocate.Request do
       :not_requested -> []
       %Attribute.ReservationToken{} -> [reservation_token]
     end ++ [
-      %Attribute.XORMappedAddress{
-        family: family(a),
-        address: a,
-        port: p
-      },
       %Attribute.XORRelayedAddress{
         family: family(addr),
         address: addr,
@@ -61,6 +56,11 @@ defmodule MongooseICE.Evaluator.Allocate.Request do
       },
       %Attribute.Lifetime{
         duration: lifetime
+      },
+      %Attribute.XORMappedAddress{
+        family: family(a),
+        address: a,
+        port: p
       }
     ]
     {%{params | attributes: attrs}, turn_state}
@@ -175,7 +175,7 @@ defmodule MongooseICE.Evaluator.Allocate.Request do
     r.token
   end
 
-  defp udp_opts(server) do
+  defp udp_opts(_server) do
     [:binary, active: UDP.Worker.burst_length(), ip: {0, 0, 0, 0}]
   end
 
