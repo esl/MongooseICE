@@ -257,10 +257,12 @@ defmodule MongooseICE.UDP.AuthTemplate do
 
           resp = communicate_all(udp, 0, req)
 
-          params = Format.decode!(resp)
+          params = Format.decode!(resp, secret: @valid_secret, username: ctx.username, realm: "localhost")
           assert %Params{class: :success,
                          method: unquote(request),
-                         identifier: ^id} = params
+                         identifier: ^id,
+                         verified?: true,
+                         signed?: true} = params
         end
 
         unquote(

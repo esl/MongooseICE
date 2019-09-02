@@ -9,4 +9,4 @@ DEFAULT_RELAY_IP=`hostname -I | awk '{print $1}'`
 export MONGOOSEICE_UDP_RELAY_IP=${MONGOOSEICE_UDP_RELAY_IP:=$DEFAULT_RELAY_IP}
 export MONGOOSEICE_TCP_RELAY_IP=${MONGOOSEICE_TCP_RELAY_IP:=$DEFAULT_RELAY_IP}
 
-/opt/app/bin/mongooseice "$@"
+trap 'exit' INT; /app/bin/mongooseice "$@"

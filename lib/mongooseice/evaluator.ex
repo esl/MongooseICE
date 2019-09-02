@@ -18,12 +18,16 @@ defmodule MongooseICE.Evaluator do
   @spec service(Params.t, MongooseICE.client_info, MongooseICE.UDP.server_opts, TURN.t)
     :: {Params.t, TURN.t} | {:void, TURN.t}
   def service(params, client, server, turn_state) do
-    case service_(params, client, server, turn_state) do
-      {new_params, new_turn_state} ->
-        {response(new_params), new_turn_state}
-      new_params ->
-        {response(new_params), turn_state}
-    end
+    Logger.debug("Received #{params.class}:#{params.method}[#{params.identifier}] from #{inspect(client.ip)}:#{inspect(client.port)}")
+    {resp_params, next_turn_state} =
+      case service_(params, client, server, turn_state) do
+        {new_params, new_turn_state} ->
+          {response(new_params), new_turn_state}
+        new_params ->
+          {response(new_params), turn_state}
+      end
+    Logger.debug("Responding to #{inspect(client.ip)}:#{inspect(client.port)} with #{response_class(resp_params)}:#{params.method}[#{params.identifier}]")
+    {resp_params, next_turn_state}
   end
 
   defp service_(params, client, server, turn_state) do
@@ -89,5 +93,8 @@ defmodule MongooseICE.Evaluator do
 
   defp handler(:request), do: MongooseICE.Evaluator.Request
   defp handler(:indication), do: MongooseICE.Evaluator.Indication
+
+  defp response_class(:void), do: :void
+  defp response_class(params), do: Params.get_class(params)
 
 end

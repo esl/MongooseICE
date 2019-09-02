@@ -7,10 +7,10 @@
 |> Path.wildcard()
 |> Enum.map(&Code.eval_file(&1))
 
-use Mix.Releases.Config,
-    # This sets the default release built by `mix release`
+use Distillery.Releases.Config,
+    # This sets the default release built by `mix distillery.release`
     default_release: :default,
-    # This sets the default environment used by `mix release`
+    # This sets the default environment used by `mix distillery.release`
     default_environment: Mix.env()
 
 # For a full list of config options for both releases
@@ -31,19 +31,19 @@ environment :dev do
   # dev mode.
   set dev_mode: true
   set include_erts: false
-  set cookie: :"X9qx~N1zN2?c$HBR1=nR~Bt8[CIEYiqq;kKnB2c%i1@xc{lsUPb%`p8p$)eU;Ss<"
+  set cookie: :"syc8dYqtOe1AZepHNAOTpLz3ulca0iSrUKG0T1mKXdZzk39WSysOXmJRDHNWQzoDQJHBelT0A4Yxf9"
 end
 
 environment :prod do
   set include_erts: true
   set include_src: false
-  set cookie: :"x~f_nWyKxy3WdIt2F`2J1MgM0HnLBb;wLm/n2t3Ned[AeVDEeX>Vd|.12.ISvq20"
+  set cookie: :"uuYsvg5ueNJxy3GVdLOagEX8TAyxnMaHXp0iWeUkENGvWMXmpRcO9Pjac4zgB2TDSzOybdgoUIG5W"
   set vm_args: "rel/vm.args"
 end
 
 # You may define one or more releases in this file.
 # If you have not set a default release, or selected one
-# when running `mix release`, the first release in the file
+# when running `mix distillery.release`, the first release in the file
 # will be used by default
 
 release :mongooseice do
