@@ -1,3 +1,12 @@
+
+ &#X26A0;&#XFE0F; This repository is now deprecated and is no longer actively maintained. &#X26A0;&#XFE0F;
+
+We recommend migrating to coturn, which is a more robust, actively maintained, and feature-complete solution for TURN/STUN server functionality:
+
+* https://github.com/coturn/coturn
+* https://esl.github.io/MongooseDocs/latest/tutorials/coturn_tutorial/#important-coturn-configuration-options
+
+Please plan to transition your deployments accordingly, as no further updates, bug fixes, or security patches will be provided for this project.
 # MongooseICE
 
 [![Build Status][BUILD BADGE]][BUILD LINK]
